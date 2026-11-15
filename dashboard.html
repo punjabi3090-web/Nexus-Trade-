@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dashboard | NEXUS TRADE</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #e5e7eb 50%, #f3f4f6 100%);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Background Half White & Gold Waves Canvas */
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 10%, rgba(251, 191, 36, 0.25) 0%, rgba(255, 255, 255, 0.9) 60%),
+                  linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    }
+
+    .bg-scene svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Main Auto-Fit Viewport Container */
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(6px, 1vh, 12px) clamp(10px, 3.2vw, 16px);
+      gap: clamp(4px, 0.8vh, 8px);
+    }
+
+    /* Top Header Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      height: clamp(34px, 4.5vh, 42px);
+    }
+
+    .brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-mini-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 0.95;
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(11px, 3vw, 14px);
+    }
+
+    .brand-mini-text span:first-child { color: #070312; }
+    .brand-mini-text span:last-child { color: #d97706; }
+
+    .top-icons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      background: #120a22;
+      border: 1.5px solid #f59e0b;
+      border-radius: 50%;
+      width: clamp(30px, 4.2vh, 36px);
+      height: clamp(30px, 4.2vh, 36px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+    }
+
+    .icon-btn svg {
+      width: clamp(14px, 2vh, 17px);
+      height: clamp(14px, 2vh, 17px);
+      fill: #fbbf24;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ffffff;
+    }
+
+    /* Auto-Fit Dashboard Main Grid (Fills remaining height without overflow) */
+    .dashboard-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: clamp(5px, 1vh, 10px);
+      min-height: 0;
+    }
+
+    /* Slogan Row */
+    .slogan-row {
+      flex-shrink: 0;
+    }
+
+    .slogan-text {
+      font-size: clamp(10.5px, 2.8vw, 12.5px);
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.2;
+    }
+
+    .slogan-text span {
+      color: #d97706;
+      font-weight: 900;
+    }
+
+    /* Total Balance Card */
+    .balance-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(8px, 1.5vh, 14px) clamp(10px, 3vw, 16px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3), inset 0 0 10px rgba(245, 158, 11, 0.1);
+      flex-shrink: 0;
+    }
+
+    .balance-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .coin-logo {
+      width: clamp(34px, 5vh, 46px);
+      height: clamp(34px, 5vh, 46px);
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: clamp(18px, 2.8vh, 24px);
+      color: #070312;
+      border: 2px solid #fde047;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+      flex-shrink: 0;
+    }
+
+    .balance-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .balance-label {
+      font-size: clamp(9px, 2.4vw, 11px);
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 0.4px;
+    }
+
+    .balance-amount-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 1px;
+    }
+
+    .balance-value {
+      font-size: clamp(17px, 4.8vw, 24px);
+      font-weight: 900;
+      color: #34d399;
+    }
+
+    .balance-currency {
+      font-size: clamp(10.5px, 2.8vw, 13px);
+      font-weight: 800;
+      color: #e2e8f0;
+    }
+
+    .level-box {
+      background: rgba(18, 10, 34, 0.95);
+      border: 1px solid rgba(245, 158, 11, 0.6);
+      border-radius: 10px;
+      padding: clamp(4px, 0.8vh, 7px) clamp(8px, 2.5vw, 12px);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .level-title {
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 800;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .level-progress-bar {
+      width: clamp(50px, 14vw, 65px);
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .level-progress-fill {
+      width: 15%;
+      height: 100%;
+      background: #34d399;
+    }
+
+    .level-percent {
+      font-size: 8.5px;
+      color: #e2e8f0;
+      font-weight: 700;
+    }
+
+    /* 6 Stats Cards Grid (3x2) - Auto-stretches proportionally */
+    .stats-grid-3 {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: clamp(5px, 1vh, 8px);
+      min-height: 0;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #f59e0b;
+      border-radius: 12px;
+      padding: clamp(6px, 1.2vh, 11px) clamp(6px, 2vw, 10px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(245, 158, 11, 0.2);
+    }
+
+    .stat-card::after {
+      content: '›';
+      position: absolute;
+      top: 4px;
+      right: 7px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 700;
+    }
+
+    .stat-title {
+      font-size: clamp(9.5px, 2.6vw, 11.5px);
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 3px;
+    }
+
+    .stat-amount {
+      font-size: clamp(11px, 3.1vw, 13.5px);
+      font-weight: 800;
+      color: #34d399;
+    }
+
+    /* Achieve Packages Box */
+    .achieve-box {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #f59e0b;
+      border-radius: 14px;
+      padding: clamp(8px, 1.3vh, 13px);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+      flex-shrink: 0;
+    }
+
+    .achieve-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: clamp(5px, 0.8vh, 8px);
+    }
+
+    .achieve-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: clamp(10.5px, 2.9vw, 12.5px);
+      font-weight: 800;
+      font-style: italic;
+      color: #fbbf24;
+    }
+
+    .achieve-title-wrap svg {
+      width: 14px;
+      height: 14px;
+      fill: #fbbf24;
+    }
+
+    .view-all-link {
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      color: #e2e8f0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .package-inner-card {
+      background: rgba(18, 10, 34, 0.95);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      border-radius: 10px;
+      padding: clamp(7px, 1.1vh, 10px) 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pkg-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pkg-vip-badge {
+      background: linear-gradient(135deg, #d97706, #fbbf24);
+      color: #070312;
+      font-size: clamp(10px, 2.6vw, 11px);
+      font-weight: 900;
+      padding: 5px 8px;
+      border-radius: 7px;
+    }
+
+    .pkg-info-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pkg-name {
+      font-size: clamp(11px, 3vw, 13px);
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .pkg-earning {
+      font-size: clamp(9.5px, 2.6vw, 11.5px);
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .pkg-earning span {
+      color: #fbbf24;
+      font-weight: 800;
+    }
+
+    .active-badge-pill {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #34d399;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 99px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+
+    /* Today Trade & Total Trade Row */
+    .trade-status-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .trade-status-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #f59e0b;
+      border-radius: 12px;
+      padding: clamp(7px, 1.2vh, 10px) 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      box-shadow: 0 3px 10px rgba(245, 158, 11, 0.2);
+    }
+
+    .tsc-top {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .tsc-top svg {
+      width: 14px;
+      height: 14px;
+      fill: #fbbf24;
+    }
+
+    .tsc-bottom {
+      font-size: clamp(12px, 3.5vw, 14.5px);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tsc-bottom.success { color: #34d399; }
+    .tsc-bottom.total { color: #ffffff; }
+
+    /* Bottom Navigation Bar (4 Pages) with Gold Border */
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(5px, 0.8vh, 8px) 4px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      color: #cbd5e1;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .nav-item.active, .nav-item:hover {
+      color: #fbbf24;
+    }
+
+    .nav-item svg {
+      width: clamp(16px, 2.3vh, 19px);
+      height: clamp(16px, 2.3vh, 19px);
+      fill: currentColor;
+    }
+
+    /* Toast Notification Banner */
+    .toast-banner {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120%);
+      z-index: 999;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      max-width: 92%;
+      text-align: center;
+      transition: transform 0.3s ease;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    .toast-banner.show { transform: translateX(-50%) translateY(0); }
+    .toast-error { background: #3b0d1e; border: 1px solid #f43f5e; color: #fecdd3; }
+    .toast-success { background: #132e24; border: 1px solid #10b981; color: #a7f3d0; }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notification Box -->
+  <div id="toastBox" class="toast-banner"></div>
+
+  <!-- Background Half White & Waves Canvas -->
+  <div class="bg-scene">
+    <svg viewBox="0 0 440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#b45309" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#d97706" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="goldWaveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M -20 0 Q 110 80, 230 40 T 460 20 L 460 150 L -20 150 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880 L 460 920 L -20 920 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880" fill="none" stroke="url(#goldWaveGrad)" stroke-width="3"/>
+    </svg>
+  </div>
+
+  <!-- Main Viewport Container -->
+  <div class="app-viewport">
+
+    <!-- Top Header -->
+    <header class="top-bar">
+      <div class="brand-mini">
+        <svg width="24" height="20" viewBox="0 0 40 34" fill="none">
+          <path d="M3 29L13 7L21 21L31 5" stroke="#d97706" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 5H33V14" stroke="#fbbf24" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="brand-mini-text">
+          <span>NEXUS</span>
+          <span>TRADE</span>
+        </div>
+      </div>
+
+      <div class="top-icons">
+        <button class="icon-btn" onclick="showToast('No new notifications', 'success')" title="Notifications">
+          <span class="notification-badge">1</span>
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        </button>
+        <button class="icon-btn" onclick="showToast('Rewards level 1 active', 'success')" title="Rewards">
+          <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+        </button>
+        <button class="icon-btn" onclick="showToast('Menu options', 'success')" title="Menu">
+          <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dashboard Content Body -->
+    <main class="dashboard-body">
+
+      <!-- Slogan Row -->
+      <div class="slogan-row">
+        <div class="slogan-text">
+          Trade Smart... Grow Bigger...<br>With <span>Nexus Trade...</span>
+        </div>
+      </div>
+
+      <!-- Total Balance Card -->
+      <div class="balance-card">
+        <div class="balance-left">
+          <div class="coin-logo">₮</div>
+          <div class="balance-info">
+            <span class="balance-label">TOTAL BALANCE</span>
+            <div class="balance-amount-row">
+              <span class="balance-value" id="userBalance">$0.00</span>
+              <span class="balance-currency">USDT</span>
+            </div>
+          </div>
+        </div>
+        <div class="level-box">
+          <div class="level-title">👑 LEVEL-1</div>
+          <div class="level-progress-bar">
+            <div class="level-progress-fill"></div>
+          </div>
+          <span class="level-percent">15%</span>
+        </div>
+      </div>
+
+      <!-- 6 Stats Cards Grid (3x2) -->
+      <div class="stats-grid-3">
+        <div class="stat-card" onclick="showToast('Daily Profit details', 'success')">
+          <div class="stat-title">Daily Profit</div>
+          <div class="stat-amount">$0.00 <span style="font-size:9px; color:#cbd5e1;">/Day</span></div>
+        </div>
+
+        <div class="stat-card" onclick="showToast('Referrals details', 'success')">
+          <div class="stat-title">Referrals</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+
+        <div class="stat-card" onclick="showToast('Rewards details', 'success')">
+          <div class="stat-title">Rewards</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+
+        <div class="stat-card" onclick="showToast('Team % details', 'success')">
+          <div class="stat-title">Team %</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+
+        <div class="stat-card" onclick="showToast('Salary Income details', 'success')">
+          <div class="stat-title">Salary Income</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+
+        <div class="stat-card" onclick="showToast('Total Profit details', 'success')">
+          <div class="stat-title">Total Profit</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+      </div>
+
+      <!-- Achieve Packages Box -->
+      <div class="achieve-box">
+        <div class="achieve-header">
+          <div class="achieve-title-wrap">
+            <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+            <span>ACHIEVE PACKAGES</span>
+          </div>
+          <a href="#" class="view-all-link" onclick="event.preventDefault(); showToast('All packages view', 'success')">View All Packages ›</a>
+        </div>
+        <div class="package-inner-card">
+          <div class="pkg-left">
+            <div class="pkg-vip-badge">👑 VIP</div>
+            <div class="pkg-info-text">
+              <span class="pkg-name">VIP Trader Plan</span>
+              <span class="pkg-earning">Earns <span>1.8%</span> Daily</span>
+            </div>
+          </div>
+          <div class="active-badge-pill">
+            <span>✓ Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today Trade & Total Trade Row -->
+      <div class="trade-status-row">
+        <div class="trade-status-card">
+          <div class="tsc-top">
+            <svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+            <span>TODAY TRADE</span>
+          </div>
+          <div class="tsc-bottom success">
+            <span>Success</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#34d399"><path d="M9 16.2l-3.5-3.5L4.1 14.1 9 19 21 7l-1.4-1.4z"/></svg>
+          </div>
+        </div>
+
+        <div class="trade-status-card">
+          <div class="tsc-top">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+            <span>TOTAL TRADE</span>
+          </div>
+          <div class="tsc-bottom total">
+            <span>01</span> <span style="font-size: 10.5px; color: #94a3b8; font-weight: 600;">/Days</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (4 Pages) -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item active">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="promotions.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Promotions</span>
+      </a>
+      <a href="trade.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span>Trade</span>
+      </a>
+      <a href="asset.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.89-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Asset</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://mzqduhqtdlvymeiouhxi.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_NtapCzhK706QFomb1adwjQ_luVqjlfu";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function showToast(msg, type = 'error') {
+      const box = document.getElementById('toastBox');
+      box.textContent = msg;
+      box.className = `toast-banner show ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { box.classList.remove('show'); }, 3000);
+    }
+
+    async function loadUserData() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const user = session.user;
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        document.getElementById('userBalance').textContent = `$${parseFloat(profile.balance || 0).toFixed(2)}`;
+      }
+    }
+
+    loadUserData();
+  </script>
+</body>
+</html>
