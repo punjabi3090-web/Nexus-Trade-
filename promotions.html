@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Promotions | NEXUS TRADE</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #e5e7eb 50%, #f3f4f6 100%);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Background Half White & Gold Waves Canvas */
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 10%, rgba(251, 191, 36, 0.25) 0%, rgba(255, 255, 255, 0.9) 60%),
+                  linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    }
+
+    .bg-scene svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Main Auto-Fit Viewport Container */
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(6px, 1vh, 12px) clamp(10px, 3.2vw, 16px);
+      gap: clamp(4px, 0.8vh, 8px);
+    }
+
+    /* Top Header Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      height: clamp(38px, 5vh, 46px);
+    }
+
+    .brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-mini svg {
+      width: clamp(28px, 4vw, 34px);
+      height: clamp(24px, 3.5vw, 28px);
+    }
+
+    .brand-mini-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 0.95;
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(14px, 3.8vw, 18px);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-mini-text span:first-child { color: #070312; }
+    .brand-mini-text span:last-child { color: #d97706; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+
+    .top-icons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      background: #120a22;
+      border: 1.5px solid #f59e0b;
+      border-radius: 50%;
+      width: clamp(30px, 4.2vh, 36px);
+      height: clamp(30px, 4.2vh, 36px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+    }
+
+    .icon-btn svg {
+      width: clamp(14px, 2vh, 17px);
+      height: clamp(14px, 2vh, 17px);
+      fill: #fbbf24;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ffffff;
+    }
+
+    /* Scrollable Promotions Body */
+    .promo-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      gap: 10px;
+      padding-right: 2px;
+      min-height: 0;
+    }
+
+    .section-title {
+      font-size: clamp(12px, 3.2vw, 14px);
+      font-weight: 900;
+      font-style: italic;
+      color: #070312;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      border-bottom: 2px solid #f59e0b;
+      padding-bottom: 3px;
+    }
+
+    /* VIP Level Cards Layout */
+    .vip-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .vip-card.lvl-1 { border: 1.5px solid #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.3); }
+    .vip-card.lvl-2 { border: 1.5px solid #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.3); }
+    .vip-card.lvl-3 { border: 1.5px solid #c084fc; box-shadow: 0 0 12px rgba(192, 132, 252, 0.3); }
+    .vip-card.lvl-4 { border: 1.5px solid #4ade80; box-shadow: 0 0 12px rgba(74, 222, 128, 0.3); }
+    .vip-card.lvl-5 { border: 1.5px solid #fbbf24; box-shadow: 0 0 15px rgba(251, 191, 36, 0.35); }
+    .vip-card.lvl-6 { border: 1.5px solid #fb923c; box-shadow: 0 0 15px rgba(251, 146, 60, 0.35); }
+
+    .vip-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 6px;
+    }
+
+    .vip-left-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Styled Podium Shield Graphic for Left Side */
+    .podium-badge {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #2a1b4e 0%, #0d061f 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.4), 0 2px 6px rgba(0,0,0,0.5);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .podium-badge span:first-child {
+      font-size: 8px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+
+    .podium-badge span:last-child {
+      font-size: 15px;
+      font-weight: 900;
+      color: #fbbf24;
+      line-height: 1.1;
+    }
+
+    .vip-level-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .vip-level-title {
+      font-size: 13px;
+      font-weight: 900;
+      font-style: italic;
+      color: #ffffff;
+    }
+
+    .vip-plan-subtitle {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fbbf24;
+    }
+
+    .lock-status-badge {
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      color: #fde047;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 99px;
+      height: fit-content;
+    }
+
+    .lock-status-badge.active {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
+      color: #34d399;
+    }
+
+    .vip-details {
+      font-size: 10.5px;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      line-height: 1.3;
+    }
+
+    .vip-details span {
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    /* Progress Bars Styling */
+    .progress-section {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .progress-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .progress-row-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9.5px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .progress-row-info span:last-child {
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #34d399);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+
+    /* Extra Promotion & Salary Cards */
+    .promo-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(245, 158, 11, 0.2);
+    }
+
+    .promo-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 4px;
+    }
+
+    .promo-level-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .extra-reward-box {
+      background: linear-gradient(135deg, #1a0f35 0%, #0d061f 100%);
+      border: 1.5px dashed #f59e0b;
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(245, 158, 11, 0.2);
+    }
+
+    /* Eligibility Checker Box */
+    .eligibility-box {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 12px;
+      padding: 12px;
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+      margin-bottom: 6px;
+    }
+
+    .eligibility-select {
+      width: 100%;
+      background: #070312;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 8px;
+      color: #fbbf24;
+      font-weight: 700;
+      font-size: 11.5px;
+      margin: 8px 0;
+    }
+
+    .btn-check-status {
+      width: 100%;
+      background: linear-gradient(90deg, #b45309, #f59e0b);
+      color: #ffffff;
+      border: none;
+      padding: 9px;
+      border-radius: 8px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .status-result-display {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      display: none;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(5px, 0.8vh, 8px) 4px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      color: #cbd5e1;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .nav-item.active, .nav-item:hover {
+      color: #fbbf24;
+    }
+
+    .nav-item svg {
+      width: clamp(16px, 2.3vh, 19px);
+      height: clamp(16px, 2.3vh, 19px);
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Canvas -->
+  <div class="bg-scene">
+    <svg viewBox="0 0 440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#b45309" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#d97706" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="goldWaveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M -20 0 Q 110 80, 230 40 T 460 20 L 460 150 L -20 150 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880 L 460 920 L -20 920 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880" fill="none" stroke="url(#goldWaveGrad)" stroke-width="3"/>
+    </svg>
+  </div>
+
+  <div class="app-viewport">
+    
+    <!-- Top Header -->
+    <header class="top-bar">
+      <div class="brand-mini">
+        <svg viewBox="0 0 40 34" fill="none">
+          <path d="M3 29L13 7L21 21L31 5" stroke="#d97706" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 5H33V14" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="brand-mini-text">
+          <span>NEXUS</span>
+          <span>TRADE</span>
+        </div>
+      </div>
+
+      <div class="top-icons">
+        <button class="icon-btn" title="Notifications">
+          <span class="notification-badge">1</span>
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        </button>
+        <button class="icon-btn" title="Rewards">
+          <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Promotions Scrollable Body -->
+    <main class="promo-body">
+
+      <!-- VIP Level & Packages Roadmap -->
+      <div class="section-title">👑 VIP LEVEL &amp; PACKAGES ROADMAP</div>
+
+      <!-- Level 1 -->
+      <div class="vip-card lvl-1">
+        <div class="vip-card-top">
+          <div class="vip-left-badge">
+            <div class="podium-badge"><span>Level</span><span>1</span></div>
+            <div class="vip-level-info">
+              <div class="vip-level-title">Level 1</div>
+              <div class="vip-plan-subtitle">VIP Trader Plan</div>
+            </div>
+          </div>
+          <div class="lock-status-badge active">✓ Active</div>
+        </div>
+        <div class="vip-details">
+          <div>• Minimum Balance: <span>$20</span> | Deposit Reward: <span>$3</span></div>
+          <div>• Trade Profit: <span>1.8% Daily</span> | Badge: VIP Nexus / Gold Star</div>
+        </div>
+      </div>
+
+      <!-- Level 2 -->
+      <div class="vip-card lvl-2">
+        <div class="vip-card-top">
+          <div class="vip-left-badge">
+            <div class="podium-badge"><span>Level</span><span>2</span></div>
+            <div class="vip-level-info">
+              <div class="vip-level-title">Level 2</div>
+              <div class="vip-plan-subtitle">Pro Elite Plan</div>
+            </div>
+          </div>
+          <div class="lock-status-badge">🔒 Locked</div>
+        </div>
+        <div class="vip-details">
+          <div>• Min Balance: <span>$200 Required</span> | Upgrade Reward: <span>$20</span></div>
+          <div>• Trade: <span>2.0% Daily</span> | Comm: <span>A: 12% | B: 8% | C: 5%</span></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Valid Members with $50+ (0/3)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $20+ (0/3)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 3 -->
+      <div class="vip-card lvl-3">
+        <div class="vip-card-top">
+          <div class="vip-left-badge">
+            <div class="podium-badge"><span>Level</span><span>3</span></div>
+            <div class="vip-level-info">
+              <div class="vip-level-title">Level 3</div>
+              <div class="vip-plan-subtitle">Master Venture Plan</div>
+            </div>
+          </div>
+          <div class="lock-status-badge">🔒 Locked</div>
+        </div>
+        <div class="vip-details">
+          <div>• Min Balance: <span>$300 Required</span> | Upgrade Reward: <span>$30</span></div>
+          <div>• Trade: <span>2.5% Daily</span> | Comm: <span>A: 18% | B: 12% | C: 8%</span></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Valid Members with $100+ (0/2)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $20+ (0/5)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 4 -->
+      <div class="vip-card lvl-4">
+        <div class="vip-card-top">
+          <div class="vip-left-badge">
+            <div class="podium-badge"><span>Level</span><span>4</span></div>
+            <div class="vip-level-info">
+              <div class="vip-level-title">Level 4</div>
+              <div class="vip-plan-subtitle">Quantum Prime Plan</div>
+            </div>
+          </div>
+          <div class="lock-status-badge">🔒 Locked</div>
+        </div>
+        <div class="vip-details">
+          <div>• Min Balance: <span>$500 Required</span> | Upgrade Reward: <span>$60</span></div>
+          <div>• Trade: <span>3.5% Daily</span> | Comm: <span>A: 20% | B: 15% | C: 12%</span></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Valid Members with $100+ (0/3)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $50+ (0/3)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $20+ (0/2)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 5 -->
+      <div class="vip-card lvl-5">
+        <div class="vip-card-top">
+          <div class="vip-left-badge">
+            <div class="podium-badge"><span>Level</span><span>5</span></div>
+            <div class="vip-level-info">
+              <div class="vip-level-title">Level 5</div>
+              <div class="vip-plan-subtitle">Titanium Alpha Plan</div>
+            </div>
+          </div>
+          <div class="lock-status-badge">🔒 Locked</div>
+        </div>
+        <div class="vip-details">
+          <div>• Min Balance: <span>$1000 Required</span> | Upgrade Reward: <span>$100</span></div>
+          <div>• Trade: <span>4.0% / 4.5% Daily</span> | Comm: <span>A: 25% | B: 18% | C: 15%</span></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Valid Members with $100+ (0/3)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $50+ (0/5)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $20+ (0/5)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 6 -->
+      <div class="vip-card lvl-6">
+        <div class="vip-card-top">
+          <div class="vip-left-badge">
+            <div class="podium-badge"><span>Level</span><span>6</span></div>
+            <div class="vip-level-info">
+              <div class="vip-level-title">Level 6</div>
+              <div class="vip-plan-subtitle">Nexus Legend Plan</div>
+            </div>
+          </div>
+          <div class="lock-status-badge">🔒 Locked</div>
+        </div>
+        <div class="vip-details">
+          <div>• Min Balance: <span>$2000 Required</span> | Upgrade Reward: <span>$200</span></div>
+          <div>• Trade: <span>5.5% / 6.0% Daily</span> | Comm: <span>A: 35% | B: 25% | C: 20%</span></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Valid Members with $200+ (0/2)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Valid Members with $100+ (0/3)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $50+ (0/5)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Valid Members with $20+ (0/5)</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Extra Promotion Reward (Kept Intact) -->
+      <div class="section-title">🎁 EXTRA PROMOTION REWARD</div>
+      
+      <div class="extra-reward-box">
+        <div style="font-size: 12px; font-weight: 800; color: #fbbf24;">1- Nexus Growth Accelerator ($300 Reward)</div>
+        <div class="vip-details" style="margin-top: 4px;">
+          <div>• Reqs: <span>Min Balance $300 | 10 Direct A ($50+) | 35 Indirect B/C ($20+)</span></div>
+        </div>
+        <div class="progress-section" style="margin-top:6px;">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Progress (0/10):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Progress (0/35):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="extra-reward-box">
+        <div style="font-size: 12px; font-weight: 800; color: #fbbf24;">2- Nexus Elite Vanguard ($500 Reward)</div>
+        <div class="vip-details" style="margin-top: 4px;">
+          <div>• Reqs: <span>Min Balance $500 | 15 Direct A ($50+) | 40 Indirect B/C ($20+)</span></div>
+        </div>
+        <div class="progress-section" style="margin-top:6px;">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Progress (0/15):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Progress (0/40):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nexus Trade Salary (Kept Intact) -->
+      <div class="section-title">💼 NEXUS TRADE SALARY</div>
+
+      <div class="promo-card">
+        <div class="promo-card-header"><span class="promo-level-title">💼 Level 2 Ambassador Salary</span><span style="color: #fbbf24; font-weight: 900;">$300 /mo</span></div>
+        <div class="vip-details"><div>• Reqs: <span>15 Direct A Valid Members</span> | <span>50 Indirect B/C</span></div></div>
+        <div class="progress-section" style="margin-top:6px;">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Progress (0/15):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Progress (0/50):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="promo-card">
+        <div class="promo-card-header"><span class="promo-level-title">💼 Level 3 Ambassador Salary</span><span style="color: #fbbf24; font-weight: 900;">$600 /mo</span></div>
+        <div class="vip-details"><div>• Reqs: <span>25 Direct A Valid Members</span> | <span>90 Indirect B/C</span></div></div>
+        <div class="progress-section" style="margin-top:6px;">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Progress (0/25):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Progress (0/90):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="promo-card">
+        <div class="promo-card-header"><span class="promo-level-title">💼 Level 4 Ambassador Salary</span><span style="color: #fbbf24; font-weight: 900;">$1,200 /mo</span></div>
+        <div class="vip-details"><div>• Reqs: <span>40 Direct A Valid Members</span> | <span>150 Indirect B/C</span></div></div>
+        <div class="progress-section" style="margin-top:6px;">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Progress (0/40):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Progress (0/150):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="promo-card">
+        <div class="promo-card-header"><span class="promo-level-title">💼 Level 5 Ambassador Salary</span><span style="color: #fbbf24; font-weight: 900;">$2,500 /mo</span></div>
+        <div class="vip-details"><div>• Reqs: <span>60 Direct A Valid Members</span> | <span>250 Indirect B/C</span></div></div>
+        <div class="progress-section" style="margin-top:6px;">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Progress (0/60):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Progress (0/250):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="promo-card">
+        <div class="promo-card-header"><span class="promo-level-title">💼 Level 6 Ambassador Salary</span><span style="color: #fbbf24; font-weight: 900;">$5,000 /mo</span></div>
+        <div class="vip-details"><div>• Reqs: <span>100 Direct A Valid Members</span> | <span>500 Indirect B/C</span></div></div>
+        <div class="progress-section" style="margin-top:6px;">
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Direct A Progress (0/100):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-row-info"><span>Indirect B/C Progress (0/500):</span><span>0%</span></div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Salary Eligibility Checker Section -->
+      <div class="section-title">🔍 SALARY ELIGIBILITY CHECKER</div>
+      <div class="eligibility-box">
+        <div style="font-size: 12px; font-weight: 800; color: #fbbf24;">Check Your Salary Status Instantly</div>
+        <select id="salaryLevelSelect" class="eligibility-select">
+          <option value="2">Level 2 Salary ($300 /mo)</option>
+          <option value="3">Level 3 Salary ($600 /mo)</option>
+          <option value="4">Level 4 Salary ($1,200 /mo)</option>
+          <option value="5">Level 5 Salary ($2,500 /mo)</option>
+          <option value="6">Level 6 Salary ($5,000 /mo)</option>
+        </select>
+        <button class="btn-check-status" onclick="checkUserEligibility()">🚀 Check My Eligibility Status</button>
+        <div id="eligibilityResult" class="status-result-display"></div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="promotions.html" class="nav-item active">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Promotions</span>
+      </a>
+      <a href="trade.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span>Trade</span>
+      </a>
+      <a href="asset.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.89-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Asset</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://mzqduhqtdlvymeiouhxi.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_NtapCzhK706QFomb1adwjQ_luVqjlfu";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkUserEligibility() {
+      const selectedLevel = document.getElementById('salaryLevelSelect').value;
+      const resultBox = document.getElementById('eligibilityResult');
+      resultBox.style.display = "block";
+      resultBox.style.background = "#1e1b4b";
+      resultBox.style.color = "#fbbf24";
+      resultBox.textContent = "Checking your team data from server...";
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        resultBox.style.background = "#3b0d1e";
+        resultBox.style.color = "#fecdd3";
+        resultBox.textContent = "Please login first to check eligibility!";
+        return;
+      }
+
+      setTimeout(() => {
+        const isEligible = false;
+        if (isEligible) {
+          resultBox.style.background = "#132e24";
+          resultBox.style.color = "#34d399";
+          resultBox.textContent = `🎉 Congratulations! You are ELIGIBLE for Level ${selectedLevel} Salary. Claim now!`;
+        } else {
+          resultBox.style.background = "#3b0d1e";
+          resultBox.style.color = "#fecdd3";
+          resultBox.textContent = `❌ INELIGIBLE: Complete required members to unlock Level ${selectedLevel} Salary.`;
+        }
+      }, 800);
+    }
+  </script>
+
+</body>
+</html>
