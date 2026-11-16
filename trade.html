@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Trade | NEXUS TRADE</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: #070312;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Background Grand Space & Gold Glow Theme */
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.2) 0%, rgba(7, 3, 18, 0.95) 70%),
+                  linear-gradient(180deg, #120a22 0%, #070312 100%);
+    }
+
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(6px, 1vh, 10px) clamp(10px, 3vw, 14px);
+      gap: clamp(4px, 0.6vh, 8px);
+    }
+
+    /* Top Grand Header */
+    .top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      padding-bottom: 2px;
+      border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-logo-icon {
+      width: 38px;
+      height: 34px;
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-style: italic;
+      color: #070312;
+      font-size: 16px;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+
+    .brand-text-col {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 900;
+      font-style: italic;
+      color: #fbbf24;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 7.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+      letter-spacing: 1.2px;
+      margin-top: 2px;
+    }
+
+    .top-icons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-badge-btn {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #1e1138 0%, #0d061f 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+    }
+
+    .icon-badge-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: #fbbf24;
+    }
+
+    .notif-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 8px;
+      font-weight: 900;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #fff;
+    }
+
+    /* Scrollable Trade Body */
+    .trade-scroll-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-y: auto;
+      gap: 7px;
+      padding-right: 1px;
+      min-height: 0;
+    }
+
+    /* Wallet Box */
+    .wallet-card {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 12px;
+      padding: 9px 14px;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.25);
+    }
+
+    .wallet-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .wallet-amount {
+      font-size: clamp(20px, 5.5vw, 24px);
+      font-weight: 900;
+      color: #fbbf24;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+      margin-top: 1px;
+    }
+
+    /* Crypto Rates Ticker Grid */
+    .crypto-ticker-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .crypto-chip {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      border-radius: 10px;
+      padding: 7px 6px;
+      text-align: center;
+    }
+
+    .crypto-chip .symbol {
+      font-size: 9px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .crypto-chip .price {
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #ffffff;
+      margin: 2px 0;
+    }
+
+    .crypto-chip .change {
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #34d399;
+    }
+
+    /* 1. Live Candlestick Market Chart Section */
+    .chart-section {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1.4px solid #fbbf24;
+      border-radius: 12px;
+      padding: 8px 10px;
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.18);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .chart-title {
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .timeframe-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tf-tab {
+      background: #070312;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      color: #cbd5e1;
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .tf-tab.active {
+      background: #fbbf24;
+      color: #070312;
+      border-color: #fbbf24;
+    }
+
+    .chart-sub-price {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .chart-sub-price .pair {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .chart-sub-price .live-val {
+      font-size: 14px;
+      font-weight: 900;
+      color: #22c55e;
+    }
+
+    .chart-sub-price .live-pct {
+      font-size: 10px;
+      font-weight: 800;
+      color: #22c55e;
+    }
+
+    .live-candlestick-box {
+      width: 100%;
+      height: 92px;
+      background: #06030e;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background-image: 
+        linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 26px 23px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Profits Grid */
+    .profits-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .profit-mini-card {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 10px;
+      padding: 7px 8px;
+      text-align: center;
+    }
+
+    .profit-mini-card .p-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .profit-mini-card .p-val {
+      font-size: 13.5px;
+      font-weight: 900;
+      color: #34d399;
+      margin-top: 2px;
+    }
+
+    /* Active VIP Plan Card */
+    .vip-active-card {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1.5px solid #34d399;
+      border-radius: 12px;
+      padding: 9px 12px;
+      box-shadow: 0 0 15px rgba(52, 211, 153, 0.2);
+    }
+
+    .vip-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .vip-plan-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffffff;
+      font-style: italic;
+    }
+
+    .active-badge-pill {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #34d399;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    .vip-details-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9.5px;
+      color: #cbd5e1;
+      margin-bottom: 5px;
+    }
+
+    .vip-details-row span {
+      color: #fbbf24;
+      font-weight: 700;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 68%;
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #34d399);
+      border-radius: 99px;
+    }
+
+    /* 2. Replaced Recent Transactions with TODAY TRADE & TOTAL TRADE Cards */
+    .trade-stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .trade-stat-box {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1.4px solid #fbbf24;
+      border-radius: 12px;
+      padding: 9px 12px;
+      box-shadow: 0 3px 12px rgba(251, 191, 36, 0.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .ts-head {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #e2e8f0;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .ts-head svg {
+      width: 13px;
+      height: 13px;
+      stroke: #fbbf24;
+      fill: none;
+    }
+
+    .ts-value-success {
+      font-size: 14px;
+      font-weight: 900;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ts-value-days {
+      font-size: 15px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .ts-value-days span {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    /* START TRAINING Button */
+    .btn-start-training {
+      width: 100%;
+      background: linear-gradient(90deg, #b45309 0%, #f59e0b 50%, #34d399 100%);
+      color: #ffffff;
+      border: none;
+      padding: clamp(11px, 1.8vh, 14px);
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: clamp(14px, 3.8vw, 17px);
+      font-style: italic;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(245, 158, 11, 0.5);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .btn-start-training:active {
+      transform: scale(0.97);
+    }
+
+    /* Simulation Modal */
+    .trade-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 3, 18, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 100;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .trade-modal-content {
+      width: 100%;
+      max-width: 340px;
+      background: linear-gradient(135deg, #160c2c 0%, #070312 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #fbbf24;
+      font-style: italic;
+    }
+
+    .pulse-status {
+      font-size: 11px;
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(5px, 0.8vh, 8px) 4px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      color: #cbd5e1;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .nav-item.active, .nav-item:hover {
+      color: #fbbf24;
+    }
+
+    .nav-item svg {
+      width: clamp(16px, 2.3vh, 19px);
+      height: clamp(16px, 2.3vh, 19px);
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-scene"></div>
+
+  <div class="app-viewport">
+    
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="brand-group">
+        <div class="brand-logo-icon">NT</div>
+        <div class="brand-text-col">
+          <span class="brand-title">NEXUS TRADE</span>
+          <span class="brand-subtitle">NEXT GEN DIGITAL ASSETS</span>
+        </div>
+      </div>
+      <div class="top-icons">
+        <div class="icon-badge-btn">
+          <span class="notif-dot">1</span>
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        </div>
+        <div class="icon-badge-btn">
+          <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <main class="trade-scroll-area">
+
+      <!-- Wallet Balance -->
+      <div class="wallet-card">
+        <div class="wallet-label">Wallet Balance</div>
+        <div class="wallet-amount" id="userWalletBalance">$125.60 USDT</div>
+      </div>
+
+      <!-- Crypto Ticker -->
+      <div class="crypto-ticker-grid">
+        <div class="crypto-chip">
+          <div class="symbol">BTC/USDT</div>
+          <div class="price" id="btcPrice">$106,842.17</div>
+          <div class="change">+2.4% ▲</div>
+        </div>
+        <div class="crypto-chip">
+          <div class="symbol">ETH/USDT</div>
+          <div class="price" id="ethPrice">$3,874.31</div>
+          <div class="change">+1.8% ▲</div>
+        </div>
+        <div class="crypto-chip">
+          <div class="symbol">USDT</div>
+          <div class="price">$1.00</div>
+          <div class="change">0.0% -</div>
+        </div>
+      </div>
+
+      <!-- 1. Replaced Live Market Chart (Green/Red Candlesticks + Live Trend) -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="chart-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+            Live Market Chart
+          </div>
+          <div class="timeframe-tabs">
+            <span class="tf-tab active">1H</span>
+            <span class="tf-tab">1D</span>
+            <span class="tf-tab">1W</span>
+          </div>
+        </div>
+        <div class="chart-sub-price">
+          <span class="pair">BTC/USDT</span>
+          <span class="live-val" id="chartBtcLive">106,842.17</span>
+          <span class="live-pct">+2.4% ▲</span>
+        </div>
+        <div class="live-candlestick-box">
+          <svg id="liveCandleSvg" class="chart-svg" viewBox="0 0 340 90" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="upArrowGlow" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#22c55e" stop-opacity="0.1"/>
+                <stop offset="100%" stop-color="#4ade80" stop-opacity="0.95"/>
+              </linearGradient>
+              <filter id="neonGreen" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <g id="candlesGroup"></g>
+            <!-- Glowing upward trend arrow like reference image -->
+            <path d="M 195 86 Q 245 80, 275 64" stroke="url(#upArrowGlow)" stroke-width="2.5" fill="none" filter="url(#neonGreen)"/>
+            <polygon points="278,61 269,62 275,69" fill="#4ade80" filter="url(#neonGreen)"/>
+            <!-- Right Price Axis Labels -->
+            <text x="310" y="16" fill="#cbd5e1" font-size="8" font-weight="700">107K</text>
+            <text x="310" y="38" fill="#cbd5e1" font-size="8" font-weight="700">106K</text>
+            <text x="310" y="61" fill="#cbd5e1" font-size="8" font-weight="700">105K</text>
+            <text x="310" y="83" fill="#cbd5e1" font-size="8" font-weight="700">104K</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Profits Grid (4 Cards) -->
+      <div class="profits-grid-4">
+        <div class="profit-mini-card">
+          <div class="p-label">Daily Profit</div>
+          <div class="p-val" id="dailyProfitDisplay">$5.60</div>
+        </div>
+        <div class="profit-mini-card">
+          <div class="p-label">Total Profit</div>
+          <div class="p-val" id="totalProfitDisplay">$11.00</div>
+        </div>
+        <div class="profit-mini-card">
+          <div class="p-label">Weekly Profit</div>
+          <div class="p-val">$24.50</div>
+        </div>
+        <div class="profit-mini-card">
+          <div class="p-label">Monthly Profit</div>
+          <div class="p-val">$98.20</div>
+        </div>
+      </div>
+
+      <!-- Active VIP Plan Card -->
+      <div class="vip-active-card">
+        <div class="vip-top-row">
+          <div class="vip-plan-title">Level 1: VIP Trader Plan</div>
+          <div class="active-badge-pill">✓ Active</div>
+        </div>
+        <div class="vip-details-row">
+          <div>Daily Return: <span>1.8%</span></div>
+          <div>Min Balance: <span>$20</span></div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- 2. Replaced Recent Transactions with TODAY TRADE & TOTAL TRADE Cards -->
+      <div class="trade-stats-row">
+        <div class="trade-stat-box">
+          <div class="ts-head">
+            <svg viewBox="0 0 24 24" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+            TODAY TRADE
+          </div>
+          <div class="ts-value-success" id="todayTradeStatus">Success ✓</div>
+        </div>
+
+        <div class="trade-stat-box">
+          <div class="ts-head">
+            <svg viewBox="0 0 24 24" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            TOTAL TRADE
+          </div>
+          <div class="ts-value-days"><strong id="totalTradeDays">01</strong> <span>/Days</span></div>
+        </div>
+      </div>
+
+      <!-- START TRAINING Button -->
+      <button class="btn-start-training" onclick="startTrainingSimulation()">START TRAINING</button>
+
+    </main>
+
+    <!-- Simulation Modal -->
+    <div id="tradeModal" class="trade-modal-overlay">
+      <div class="trade-modal-content">
+        <div class="modal-title">📈 EXECUTING TRAINING TRADE</div>
+        <div class="pulse-status" id="modalStatusText">Analyzing live market &amp; generating profit...</div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="promotions.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Promotions</span>
+      </a>
+      <a href="trade.html" class="nav-item active">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span>Trade</span>
+      </a>
+      <a href="asset.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.89-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Asset</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    // 1. Live Red & Green Candlestick Generator & Real-time Animation
+    const candlesGroup = document.getElementById('candlesGroup');
+    let candleData = [
+      {y: 68, h: 12, up: true},  {y: 62, h: 10, up: true},  {y: 55, h: 14, up: true},
+      {y: 58, h: 9,  up: false}, {y: 50, h: 13, up: true},  {y: 53, h: 8,  up: false},
+      {y: 44, h: 15, up: true},  {y: 48, h: 11, up: false}, {y: 40, h: 12, up: true},
+      {y: 36, h: 14, up: true},  {y: 42, h: 10, up: false}, {y: 47, h: 12, up: false},
+      {y: 43, h: 9,  up: true},  {y: 50, h: 13, up: false}, {y: 56, h: 11, up: false},
+      {y: 60, h: 10, up: false}, {y: 52, h: 14, up: true},  {y: 55, h: 9,  up: false},
+      {y: 46, h: 16, up: true},  {y: 38, h: 15, up: true},  {y: 42, h: 10, up: false},
+      {y: 35, h: 13, up: true},  {y: 39, h: 11, up: false}, {y: 31, h: 14, up: true},
+      {y: 26, h: 15, up: true},  {y: 29, h: 9,  up: false}, {y: 33, h: 11, up: false},
+      {y: 36, h: 10, up: false}, {y: 27, h: 14, up: true},  {y: 20, h: 16, up: true},
+      {y: 14, h: 14, up: true}
+    ];
+
+    function renderCandles() {
+      candlesGroup.innerHTML = '';
+      candleData.forEach((c, idx) => {
+        const x = 8 + idx * 9.6;
+        const color = c.up ? '#10b981' : '#ef4444';
+        const wickTop = Math.max(4, c.y - 5);
+        const wickBot = Math.min(86, c.y + c.h + 5);
+
+        // Wick line
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x + 2.5);
+        line.setAttribute('y1', wickTop);
+        line.setAttribute('x2', x + 2.5);
+        line.setAttribute('y2', wickBot);
+        line.setAttribute('stroke', color);
+        line.setAttribute('stroke-width', '1.2');
+        candlesGroup.appendChild(line);
+
+        // Candle body
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', c.y);
+        rect.setAttribute('width', '5');
+        rect.setAttribute('height', c.h);
+        rect.setAttribute('rx', '1');
+        rect.setAttribute('fill', color);
+        candlesGroup.appendChild(rect);
+      });
+    }
+
+    renderCandles();
+
+    // Live ticker & candlestick movement every 1.5 seconds
+    setInterval(() => {
+      let btcElem = document.getElementById('btcPrice');
+      let chartBtcElem = document.getElementById('chartBtcLive');
+      let ethElem = document.getElementById('ethPrice');
+
+      let rawBtc = (106842.17 + (Math.random() * 45 - 20)).toFixed(2);
+      let formattedBtc = Number(rawBtc).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      let randomEth = (3874.31 + (Math.random() * 8 - 4)).toFixed(2);
+
+      btcElem.textContent = "$" + formattedBtc;
+      chartBtcElem.textContent = formattedBtc;
+      ethElem.textContent = "$" + Number(randomEth).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+      // Shift candlesticks live
+      const last = candleData[candleData.length - 1];
+      const isUp = Math.random() > 0.42;
+      const delta = Math.floor(Math.random() * 7) + 2;
+      let nextY = isUp ? Math.max(10, last.y - delta) : Math.min(62, last.y + delta);
+      let nextH = Math.floor(Math.random() * 9) + 8;
+
+      candleData.shift();
+      candleData.push({ y: nextY, h: nextH, up: isUp });
+      renderCandles();
+    }, 1500);
+
+    // Training Simulation Function
+    let tradeDayCount = 1;
+    function startTrainingSimulation() {
+      const modal = document.getElementById('tradeModal');
+      const statusText = document.getElementById('modalStatusText');
+      modal.style.display = "flex";
+      statusText.style.color = "#34d399";
+      statusText.textContent = "Analyzing live market & generating profit...";
+
+      setTimeout(() => {
+        statusText.textContent = "🎉 Training Trade Successful! Profits Added.";
+
+        let dailyElem = document.getElementById('dailyProfitDisplay');
+        let totalElem = document.getElementById('totalProfitDisplay');
+        let walletElem = document.getElementById('userWalletBalance');
+        let daysElem = document.getElementById('totalTradeDays');
+
+        dailyElem.textContent = "$7.40";
+        totalElem.textContent = "$12.80";
+        walletElem.textContent = "$127.40 USDT";
+
+        tradeDayCount++;
+        daysElem.textContent = String(tradeDayCount).padStart(2, '0');
+
+        setTimeout(() => {
+          modal.style.display = "none";
+        }, 1200);
+      }, 2500);
+    }
+  </script>
+
+</body>
+</html>
