@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dashboard | NEXUS TRADE</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #e5e7eb 50%, #f3f4f6 100%);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Background Half White & Gold Waves Canvas matching promotions page */
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 10%, rgba(251, 191, 36, 0.25) 0%, rgba(255, 255, 255, 0.9) 60%),
+                  linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    }
+
+    .bg-scene svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Main Auto-Fit Viewport Container */
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(6px, 1vh, 12px) clamp(10px, 3.2vw, 16px);
+      gap: clamp(4px, 0.8vh, 8px);
+    }
+
+    /* Top Header Bar matching promotions page style */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      height: clamp(38px, 5vh, 46px);
+    }
+
+    .brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-mini svg {
+      width: clamp(28px, 4vw, 34px);
+      height: clamp(24px, 3.5vw, 28px);
+    }
+
+    .brand-mini-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 0.95;
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(14px, 3.8vw, 18px);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-mini-text span:first-child { color: #070312; }
+    .brand-mini-text span:last-child { color: #d97706; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+
+    .top-icons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      background: #120a22;
+      border: 1.5px solid #f59e0b;
+      border-radius: 50%;
+      width: clamp(30px, 4.2vh, 36px);
+      height: clamp(30px, 4.2vh, 36px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+    }
+
+    .icon-btn svg {
+      width: clamp(14px, 2vh, 17px);
+      height: clamp(14px, 2vh, 17px);
+      fill: #fbbf24;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ffffff;
+    }
+
+    /* Scrollable Dashboard Body */
+    .dashboard-scroll-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow-y: auto;
+      gap: clamp(5px, 0.9vh, 9px);
+      padding-right: 2px;
+      min-height: 0;
+    }
+
+    /* Slogan Row */
+    .slogan-row {
+      font-size: 10px;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.1;
+      flex-shrink: 0;
+    }
+
+    .slogan-row span {
+      color: #d97706;
+      font-weight: 900;
+    }
+
+    /* Total Balance Card */
+    .balance-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.25);
+      flex-shrink: 0;
+    }
+
+    .balance-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .coin-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 19px;
+      color: #070312;
+      border: 2px solid #fde047;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+
+    .balance-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .balance-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-value {
+      font-size: clamp(17px, 5vw, 22px);
+      font-weight: 900;
+      color: #34d399;
+      margin-top: 1px;
+    }
+
+    .level-box {
+      background: #070312;
+      border: 1px solid rgba(251, 191, 36, 0.6);
+      border-radius: 10px;
+      padding: 5px 10px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .level-title {
+      font-size: 9.5px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+
+    .level-progress-bar {
+      width: 52px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .level-progress-fill {
+      width: 15%;
+      height: 100%;
+      background: #34d399;
+    }
+
+    .level-percent {
+      font-size: 8px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    /* 6 Stats Cards Grid (3x2) */
+    .stats-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      border-radius: 10px;
+      padding: clamp(8px, 1.2vh, 12px) 6px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .stat-title {
+      font-size: 9px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 2px;
+    }
+
+    .stat-amount {
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #34d399;
+    }
+
+    /* Referral Link Box */
+    .referral-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 14px;
+      box-shadow: 0 3px 12px rgba(251, 191, 36, 0.2);
+      flex-shrink: 0;
+    }
+
+    .ref-header {
+      font-size: 10px;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .ref-box-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #070312;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 8px;
+      padding: 5px 9px;
+    }
+
+    .ref-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 9.5px;
+      font-weight: 600;
+      outline: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .copy-btn {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      color: #070312;
+      border: none;
+      padding: 4px 11px;
+      border-radius: 6px;
+      font-size: 9.5px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .ref-footer {
+      font-size: 8px;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 3px;
+    }
+
+    /* Team Summary Box */
+    .team-summary-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 14px;
+      flex-shrink: 0;
+    }
+
+    .team-top-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      text-align: center;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 6px;
+    }
+
+    .team-top-item .t-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    .team-top-item .t-val {
+      font-size: 16px;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-top: 1px;
+    }
+
+    .team-sub-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+    }
+
+    .team-sub-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 7px;
+      background: rgba(7, 3, 18, 0.6);
+      border-radius: 5px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .team-sub-row span:last-child {
+      color: #fbbf24;
+      font-weight: 900;
+      min-width: 16px;
+      text-align: right;
+    }
+
+    /* Team History Table - Fully Scrollable for 1000+ users */
+    .team-history-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 160px;
+    }
+
+    .th-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 4px;
+      flex-shrink: 0;
+    }
+
+    .th-table-container {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 180px;
+    }
+
+    .th-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5px;
+      text-align: center;
+    }
+
+    .th-table th {
+      color: #94a3b8;
+      font-weight: 700;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: sticky;
+      top: 0;
+      background: #120a22;
+      z-index: 2;
+    }
+
+    .th-table td {
+      padding: 6px 2px;
+      color: #cbd5e1;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .team-badge-c { background: #8b5cf6; color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 8px; }
+    .team-badge-a { background: #3b82f6; color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 8px; }
+    .team-badge-b { background: #ec4899; color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 8px; }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(5px, 0.8vh, 8px) 4px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      color: #cbd5e1;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .nav-item.active, .nav-item:hover {
+      color: #fbbf24;
+    }
+
+    .nav-item svg {
+      width: clamp(16px, 2.3vh, 19px);
+      height: clamp(16px, 2.3vh, 19px);
+      fill: currentColor;
+    }
+
+    /* Toast Notification Banner */
+    .toast-banner {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120%);
+      z-index: 999;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      max-width: 92%;
+      text-align: center;
+      transition: transform 0.3s ease;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    .toast-banner.show { transform: translateX(-50%) translateY(0); }
+    .toast-success { background: #132e24; border: 1px solid #10b981; color: #a7f3d0; }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notification Box -->
+  <div id="toastBox" class="toast-banner"></div>
+
+  <!-- Background Half White & Gold Waves Canvas matching promotions page -->
+  <div class="bg-scene">
+    <svg viewBox="0 0 440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#b45309" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#d97706" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="goldWaveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M -20 0 Q 110 80, 230 40 T 460 20 L 460 150 L -20 150 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880 L 460 920 L -20 920 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880" fill="none" stroke="url(#goldWaveGrad)" stroke-width="3"/>
+    </svg>
+  </div>
+
+  <div class="app-viewport">
+
+    <!-- Top Header Bar matching promotions page -->
+    <header class="top-bar">
+      <div class="brand-mini">
+        <svg viewBox="0 0 40 34" fill="none">
+          <path d="M3 29L13 7L21 21L31 5" stroke="#d97706" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 5H33V14" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="brand-mini-text">
+          <span>NEXUS</span>
+          <span>TRADE</span>
+        </div>
+      </div>
+
+      <div class="top-icons">
+        <button class="icon-btn" onclick="showToast('No new notifications', 'success')" title="Notifications">
+          <span class="notification-badge">1</span>
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        </button>
+        <button class="icon-btn" onclick="showToast('Rewards level 1 active', 'success')" title="Rewards">
+          <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Dashboard Body -->
+    <main class="dashboard-scroll-area">
+
+      <!-- Slogan Row -->
+      <div class="slogan-row">
+        Trade Smart... Grow Bigger... With <span>Nexus Trade...</span>
+      </div>
+
+      <!-- Total Balance Card -->
+      <div class="balance-card">
+        <div class="balance-left">
+          <div class="coin-logo">₮</div>
+          <div class="balance-info">
+            <span class="balance-label">TOTAL BALANCE</span>
+            <div class="balance-value" id="userBalance">$0.00 USDT</div>
+          </div>
+        </div>
+        <div class="level-box">
+          <div class="level-title">👑 LEVEL-1</div>
+          <div class="level-progress-bar">
+            <div class="level-progress-fill"></div>
+          </div>
+          <span class="level-percent">15%</span>
+        </div>
+      </div>
+
+      <!-- 6 Stats Cards Grid (3x2) -->
+      <div class="stats-grid-6">
+        <div class="stat-card">
+          <div class="stat-title">Daily Profit</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Referrals</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Rewards</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Team %</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Salary Income</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Total Profit</div>
+          <div class="stat-amount">$0.00</div>
+        </div>
+      </div>
+
+      <!-- Referral Link Box -->
+      <div class="referral-card">
+        <div class="ref-header">🔗 Referral Link:</div>
+        <div class="ref-box-row">
+          <input type="text" id="refLinkInput" class="ref-input" value="https://nexus-trade.com/ref/USERNAME" readonly />
+          <button class="copy-btn" onclick="copyRefLink()">Copy</button>
+        </div>
+        <div class="ref-footer">Share your referral link and earn rewards!</div>
+      </div>
+
+      <!-- Team Summary Box -->
+      <div class="team-summary-card">
+        <div class="team-top-row">
+          <div class="team-top-item">
+            <div class="t-label">Total Register Team</div>
+            <div class="t-val">2</div>
+          </div>
+          <div class="team-top-item">
+            <div class="t-label">Total Valid Team</div>
+            <div class="t-val">2</div>
+          </div>
+        </div>
+        <div class="team-sub-grid">
+          <div class="team-sub-row"><span>Total Direct A</span><span>0</span></div>
+          <div class="team-sub-row"><span>Total Valid Direct A</span><span>0</span></div>
+          <div class="team-sub-row"><span>Total Direct B</span><span>0</span></div>
+          <div class="team-sub-row"><span>Total Valid Direct B</span><span>0</span></div>
+          <div class="team-sub-row"><span>Total Direct C</span><span>2</span></div>
+          <div class="team-sub-row"><span>Total Valid Direct C</span><span>2</span></div>
+        </div>
+      </div>
+
+      <!-- Team History Table (Fully Scrollable for 1000+ users) -->
+      <div class="team-history-card">
+        <div class="th-header">
+          <span>👥 Team History</span>
+          <span style="color:#fbbf24; font-size:9.5px;">Scrollable Feed</span>
+        </div>
+        <div class="th-table-container">
+          <table class="th-table">
+            <thead>
+              <tr>
+                <th>User Name</th>
+                <th>Team</th>
+                <th>Valid</th>
+                <th>Amount</th>
+                <th>Date &amp; Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Demo User</td>
+                <td><span class="team-badge-c">C</span></td>
+                <td style="color:#34d399;">Yes</td>
+                <td style="color:#34d399;">$0.00</td>
+                <td>2026-11-16 10:18</td>
+              </tr>
+              <tr>
+                <td>Test Member</td>
+                <td><span class="team-badge-a">A</span></td>
+                <td style="color:#34d399;">Yes</td>
+                <td style="color:#34d399;">$0.00</td>
+                <td>2026-11-16 09:45</td>
+              </tr>
+              <tr>
+                <td>New User</td>
+                <td><span class="team-badge-b">B</span></td>
+                <td style="color:#34d399;">Yes</td>
+                <td style="color:#34d399;">$0.00</td>
+                <td>2026-11-16 08:22</td>
+              </tr>
+              <tr>
+                <td>User Alpha</td>
+                <td><span class="team-badge-a">A</span></td>
+                <td style="color:#34d399;">Yes</td>
+                <td style="color:#34d399;">$5.00</td>
+                <td>2026-11-16 07:15</td>
+              </tr>
+              <tr>
+                <td>User Beta</td>
+                <td><span class="team-badge-b">B</span></td>
+                <td style="color:#34d399;">Yes</td>
+                <td style="color:#34d399;">$2.50</td>
+                <td>2026-11-16 06:10</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (4 Pages) -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item active">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="promotions.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Promotions</span>
+      </a>
+      <a href="trade.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span>Trade</span>
+      </a>
+      <a href="asset.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.89-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Asset</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://mzqduhqtdlvymeiouhxi.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_NtapCzhK706QFomb1adwjQ_luVqjlfu";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function showToast(msg, type = 'success') {
+      const box = document.getElementById('toastBox');
+      box.textContent = msg;
+      box.className = `toast-banner show ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { box.classList.remove('show'); }, 2500);
+    }
+
+    function copyRefLink() {
+      const copyText = document.getElementById("refLinkInput");
+      navigator.clipboard.writeText(copyText.value);
+      showToast("Referral link copied successfully!", "success");
+    }
+
+    async function loadUserData() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const user = session.user;
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        document.getElementById('userBalance').textContent = `$${parseFloat(profile.balance || 0).toFixed(2)} USDT`;
+        if(profile.username) {
+          document.getElementById('refLinkInput').value = `https://nexus-trade.com/ref/${profile.username}`;
+        }
+      }
+    }
+
+    loadUserData();
+  </script>
+</body>
+</html>
