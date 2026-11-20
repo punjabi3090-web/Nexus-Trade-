@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dashboard | NEXUS TRADE</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #e5e7eb 50%, #f3f4f6 100%);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 10%, rgba(251, 191, 36, 0.25) 0%, rgba(255, 255, 255, 0.9) 60%),
+                  linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    }
+
+    .bg-scene svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(6px, 1vh, 12px) clamp(10px, 3.2vw, 16px);
+      gap: clamp(4px, 0.8vh, 8px);
+      transition: filter 0.3s ease;
+    }
+
+    .app-viewport.blurred {
+      filter: blur(4px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      height: clamp(38px, 5vh, 46px);
+    }
+
+    .header-left-group {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .menu-toggle-btn {
+      background: #120a22;
+      border: 1.5px solid #f59e0b;
+      border-radius: 9px;
+      width: clamp(32px, 4.4vh, 38px);
+      height: clamp(32px, 4.4vh, 38px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+      flex-shrink: 0;
+    }
+
+    .menu-toggle-btn span {
+      display: block;
+      width: 17px;
+      height: 2.2px;
+      background: #fbbf24;
+      border-radius: 2px;
+    }
+
+    .brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-mini svg {
+      width: clamp(28px, 4vw, 34px);
+      height: clamp(24px, 3.5vw, 28px);
+    }
+
+    .brand-mini-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 0.95;
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(14px, 3.8vw, 18px);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-mini-text span:first-child { color: #070312; }
+    .brand-mini-text span:last-child { color: #d97706; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+
+    .top-icons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      background: #120a22;
+      border: 1.5px solid #f59e0b;
+      border-radius: 50%;
+      width: clamp(30px, 4.2vh, 36px);
+      height: clamp(30px, 4.2vh, 36px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+    }
+
+    .icon-btn svg {
+      width: clamp(14px, 2vh, 17px);
+      height: clamp(14px, 2vh, 17px);
+      fill: #fbbf24;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ffffff;
+    }
+
+    .dashboard-scroll-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow-y: auto;
+      gap: clamp(5px, 0.9vh, 9px);
+      padding-right: 2px;
+      min-height: 0;
+    }
+
+    .slogan-row {
+      font-size: 10px;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.1;
+      flex-shrink: 0;
+    }
+
+    .slogan-row span {
+      color: #d97706;
+      font-weight: 900;
+    }
+
+    .balance-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.25);
+      flex-shrink: 0;
+    }
+
+    .balance-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .coin-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 19px;
+      color: #070312;
+      border: 2px solid #fde047;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+
+    .balance-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .balance-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-value {
+      font-size: clamp(17px, 5vw, 22px);
+      font-weight: 900;
+      color: #34d399;
+      margin-top: 1px;
+    }
+
+    .level-box {
+      background: #070312;
+      border: 1px solid rgba(251, 191, 36, 0.6);
+      border-radius: 10px;
+      padding: 5px 10px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .level-title {
+      font-size: 9.5px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+
+    .level-progress-bar {
+      width: 52px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .level-progress-fill {
+      width: 15%;
+      height: 100%;
+      background: #34d399;
+    }
+
+    .level-percent {
+      font-size: 8px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .stats-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      border-radius: 10px;
+      padding: clamp(8px, 1.2vh, 12px) 6px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .stat-title {
+      font-size: 9px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 2px;
+    }
+
+    .stat-amount {
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #34d399;
+    }
+
+    .referral-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 14px;
+      box-shadow: 0 3px 12px rgba(251, 191, 36, 0.2);
+      flex-shrink: 0;
+    }
+
+    .ref-header {
+      font-size: 10px;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .ref-box-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #070312;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 8px;
+      padding: 5px 9px;
+    }
+
+    .ref-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 9.5px;
+      font-weight: 600;
+      outline: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .copy-btn {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      color: #070312;
+      border: none;
+      padding: 4px 11px;
+      border-radius: 6px;
+      font-size: 9.5px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .ref-footer {
+      font-size: 8px;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 3px;
+    }
+
+    .team-summary-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 14px;
+      flex-shrink: 0;
+    }
+
+    .team-top-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      text-align: center;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 6px;
+    }
+
+    .team-top-item .t-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    .team-top-item .t-val {
+      font-size: 16px;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-top: 1px;
+    }
+
+    .team-sub-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+    }
+
+    .team-sub-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 7px;
+      background: rgba(7, 3, 18, 0.6);
+      border-radius: 5px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .team-sub-row span:last-child {
+      color: #fbbf24;
+      font-weight: 900;
+      min-width: 16px;
+      text-align: right;
+    }
+
+    .team-history-card {
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.2px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.2vh, 12px) 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 160px;
+    }
+
+    .th-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 4px;
+      flex-shrink: 0;
+      gap: 6px;
+    }
+
+    .th-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .mini-alert-btn {
+      background: rgba(251, 191, 36, 0.16);
+      border: 1px solid #fbbf24;
+      color: #fbbf24;
+      border-radius: 5px;
+      padding: 2px 6px;
+      font-size: 8.5px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .th-table-container {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 180px;
+    }
+
+    .th-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5px;
+      text-align: center;
+    }
+
+    .th-table th {
+      color: #94a3b8;
+      font-weight: 700;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: sticky;
+      top: 0;
+      background: #120a22;
+      z-index: 2;
+    }
+
+    .th-table td {
+      padding: 6px 2px;
+      color: #cbd5e1;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .team-badge-c { background: #8b5cf6; color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 8px; }
+    .team-badge-a { background: #3b82f6; color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 8px; }
+    .team-badge-b { background: #ec4899; color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: 800; font-size: 8px; }
+
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(5px, 0.8vh, 8px) 4px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      color: #cbd5e1;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .nav-item.active, .nav-item:hover {
+      color: #fbbf24;
+    }
+
+    .nav-item svg {
+      width: clamp(16px, 2.3vh, 19px);
+      height: clamp(16px, 2.3vh, 19px);
+      fill: currentColor;
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(7, 3, 18, 0.55);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      display: flex;
+      justify-content: center;
+    }
+
+    .drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer-frame {
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-drawer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 82%;
+      max-width: 335px;
+      height: 100dvh;
+      background: linear-gradient(180deg, #100820 0%, #070312 100%);
+      border-right: 2px solid #fbbf24;
+      border-top-right-radius: 18px;
+      border-bottom-right-radius: 18px;
+      box-shadow: 8px 0 30px rgba(251, 191, 36, 0.35);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #ffffff;
+      transform: translateX(-105%);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 95;
+      overflow-y: auto;
+    }
+
+    .drawer-backdrop.open .left-drawer {
+      transform: translateX(0);
+    }
+
+    .drawer-top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(251, 191, 36, 0.25);
+    }
+
+    .drawer-brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .drawer-brand svg {
+      width: 26px;
+      height: 22px;
+    }
+
+    .drawer-brand-title {
+      font-size: 14.5px;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: 0.4px;
+    }
+
+    .drawer-brand-title span:first-child { color: #ffffff; }
+    .drawer-brand-title span:last-child { color: #fbbf24; }
+
+    .drawer-close-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #1a0f30;
+      border: 1.5px solid #fbbf24;
+      color: #fbbf24;
+      font-size: 14px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+    }
+
+    .drawer-profile-card {
+      background: linear-gradient(135deg, #180d2d 0%, #0a0416 100%);
+      border: 1.4px solid rgba(251, 191, 36, 0.5);
+      border-radius: 14px;
+      padding: 14px 10px;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.2);
+      position: relative;
+    }
+
+    .drawer-level-badge-top {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .drawer-lvl-pill-mini {
+      border: 1px solid #fbbf24;
+      border-radius: 5px;
+      padding: 1px 5px;
+      font-size: 8px;
+      font-weight: 900;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+    }
+
+    .drawer-avatar-big {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2.5px solid #fbbf24;
+      box-shadow: 0 0 16px rgba(251, 191, 36, 0.55);
+      background: linear-gradient(135deg, #2a184a, #0e061d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .drawer-avatar-big svg {
+      width: 52px;
+      height: 52px;
+    }
+
+    .drawer-username-big {
+      font-size: 15px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .drawer-uid-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(7, 3, 18, 0.7);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .drawer-uid-row span {
+      color: #fbbf24;
+      font-weight: 900;
+    }
+
+    .drawer-uid-copy-btn {
+      background: #fbbf24;
+      border: none;
+      border-radius: 4px;
+      color: #070312;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .drawer-settings-box {
+      border: 1.4px solid #fbbf24;
+      border-radius: 14px;
+      background: rgba(14, 7, 28, 0.85);
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.2);
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .drawer-settings-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(251, 191, 36, 0.35);
+      font-size: 12.5px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+
+    .drawer-settings-head svg {
+      width: 15px;
+      height: 15px;
+      fill: #fbbf24;
+    }
+
+    .drawer-menu-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer-menu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .drawer-menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .drawer-menu-item:active {
+      background: rgba(251, 191, 36, 0.12);
+    }
+
+    .dmi-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dmi-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #070312;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .dmi-icon svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .dmi-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .dmi-arrow {
+      color: #fbbf24;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .drawer-menu-item.logout-item .dmi-icon {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .drawer-menu-item.logout-item .dmi-label {
+      color: #f87171;
+    }
+    .drawer-menu-item.logout-item .dmi-arrow {
+      color: #f87171;
+    }
+
+    .drawer-trading-card {
+      margin-top: 4px;
+      border: 1.5px solid #22c55e;
+      border-radius: 14px;
+      padding: 9px 10px;
+      background: radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.16), rgba(7, 3, 18, 0.96) 70%);
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.22);
+      position: relative;
+    }
+
+    .dtc-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+    }
+
+    .dtc-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .dtc-live-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid #22c55e;
+      background: rgba(34, 197, 94, 0.14);
+      padding: 2px 7px;
+      border-radius: 99px;
+      font-size: 9px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .dtc-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+
+    .dtc-btns-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .dtc-btn {
+      border: none;
+      border-radius: 9px;
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .dtc-btn.buy {
+      background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
+      border: 1px solid #86efac;
+      box-shadow: 0 3px 10px rgba(34, 197, 94, 0.4);
+    }
+
+    .dtc-btn.sell {
+      background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+      border: 1px solid #fca5a5;
+      box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
+    }
+
+    .user-info-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      background: rgba(7, 3, 18, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .user-info-modal-backdrop.show {
+      display: flex;
+    }
+
+    .user-info-card {
+      width: 100%;
+      max-width: 390px;
+      background: linear-gradient(180deg, #160c2c 0%, #070312 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 18px;
+      padding: 16px;
+      color: #ffffff;
+      box-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+    }
+
+    .uic-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+      margin-bottom: 12px;
+    }
+
+    .uic-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .uic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .uic-table tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .uic-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .uic-table td {
+      padding: 9px 4px;
+    }
+
+    .uic-table td:first-child {
+      color: #94a3b8;
+      font-weight: 700;
+      width: 44%;
+    }
+
+    .uic-table td:last-child {
+      color: #ffffff;
+      font-weight: 800;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .uic-highlight {
+      color: #fbbf24 !important;
+    }
+
+    .temp-alert-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      background: rgba(7, 3, 18, 0.78);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .temp-alert-backdrop.show {
+      display: flex;
+    }
+
+    .temp-alert-box {
+      width: 100%;
+      max-width: 390px;
+      background: linear-gradient(180deg, #170b2e 0%, #070312 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 16px;
+      padding: 14px;
+      color: #f8fafc;
+      box-shadow: 0 0 28px rgba(251, 191, 36, 0.45);
+    }
+
+    .temp-alert-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+
+    .temp-alert-body {
+      font-size: 11px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 55vh;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px;
+      color: #e2e8f0;
+    }
+
+    .temp-alert-footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .temp-alert-ok {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      color: #070312;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 11.5px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .toast-banner {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120%);
+      z-index: 999;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      max-width: 92%;
+      text-align: center;
+      transition: transform 0.3s ease;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    .toast-banner.show { transform: translateX(-50%) translateY(0); }
+    .toast-success { background: #132e24; border: 1px solid #10b981; color: #a7f3d0; }
+    .toast-error { background: #3b1219; border: 1px solid #ef4444; color: #fecaca; }
+  </style>
+</head>
+<body>
+
+  <div id="toastBox" class="toast-banner"></div>
+
+  <div id="tempAlertModal" class="temp-alert-backdrop" onclick="closeTempAlert()">
+    <div class="temp-alert-box" onclick="event.stopPropagation()">
+      <div class="temp-alert-head">
+        <span id="tempAlertTitle">🔔 Team &amp; History Alert</span>
+        <button class="drawer-close-btn" onclick="closeTempAlert()">✕</button>
+      </div>
+      <div id="tempAlertBody" class="temp-alert-body"></div>
+      <div class="temp-alert-footer">
+        <button class="temp-alert-ok" onclick="closeTempAlert()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="userInfoModal" class="user-info-modal-backdrop" onclick="closeUserInfoModal(event)">
+    <div class="user-info-card" onclick="event.stopPropagation()">
+      <div class="uic-header">
+        <div class="uic-title">👤 User Information</div>
+        <button class="drawer-close-btn" onclick="toggleUserInfoModal(false)">✕</button>
+      </div>
+      <table class="uic-table">
+        <tr>
+          <td>User Name</td>
+          <td id="infoUserName">-</td>
+        </tr>
+        <tr>
+          <td>UID</td>
+          <td id="infoUserUid" class="uic-highlight">-</td>
+        </tr>
+        <tr>
+          <td>Email</td>
+          <td id="infoUserEmail">-</td>
+        </tr>
+        <tr>
+          <td>Country Code</td>
+          <td id="infoCountryCode">-</td>
+        </tr>
+        <tr>
+          <td>Phone Number</td>
+          <td id="infoPhoneNo">-</td>
+        </tr>
+        <tr>
+          <td>Referral Code</td>
+          <td id="infoRefCode" class="uic-highlight">-</td>
+        </tr>
+        <tr>
+          <td>Account Created</td>
+          <td id="infoCreatedAt" style="color:#34d399;">-</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-scene">
+    <svg viewBox="0 0 440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#b45309" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#d97706" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="goldWaveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M -20 0 Q 110 80, 230 40 T 460 20 L 460 150 L -20 150 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880 L 460 920 L -20 920 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880" fill="none" stroke="url(#goldWaveGrad)" stroke-width="3"/>
+    </svg>
+  </div>
+
+  <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeDrawerOnOutside(event)">
+    <div class="drawer-frame">
+      <aside class="left-drawer" onclick="event.stopPropagation()">
+        <div>
+          <div class="drawer-top-header">
+            <div class="drawer-brand">
+              <svg viewBox="0 0 40 34" fill="none">
+                <path d="M3 29L13 7L21 21L31 5" stroke="#d97706" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M24 5H33V14" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="drawer-brand-title">
+                <span>NEXUS</span> <span>TRADE</span>
+              </div>
+            </div>
+            <button class="drawer-close-btn" onclick="toggleDrawer(false)" title="Close Menu">✕</button>
+          </div>
+
+          <div class="drawer-profile-card">
+            <div class="drawer-level-badge-top">
+              <div style="font-size:11px; line-height:1;">👑</div>
+              <div class="drawer-lvl-pill-mini" id="drawerVipPill">LEVEL-1</div>
+            </div>
+
+            <div class="drawer-avatar-big">
+              <svg viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="24" r="12" fill="#fbd38d"/>
+                <path d="M20 20C20 12 44 12 44 20C44 16 20 16 20 20Z" fill="#742a2a"/>
+                <rect x="22" y="21" width="8" height="5" rx="1.5" fill="#1a202c"/>
+                <rect x="34" y="21" width="8" height="5" rx="1.5" fill="#1a202c"/>
+                <line x1="30" y1="23" x2="34" y2="23" stroke="#1a202c" stroke-width="1.5"/>
+                <path d="M16 54C16 42 48 42 48 54" fill="#e53e3e"/>
+              </svg>
+            </div>
+
+            <div class="drawer-username-big" id="drawerUserName">Loading...</div>
+
+            <div class="drawer-uid-row">
+              <span>UID: <span id="drawerUserUid" style="color:#ffffff;">------</span></span>
+              <button class="drawer-uid-copy-btn" onclick="copyUid()" title="Copy UID">📋</button>
+            </div>
+          </div>
+
+          <div class="drawer-settings-box">
+            <div class="drawer-settings-head">
+              <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+              <span>Settings</span>
+            </div>
+
+            <div class="drawer-menu-list">
+              <div class="drawer-menu-item" onclick="openUserInformationCard()">
+                <div class="dmi-left">
+                  <div class="dmi-icon">i</div>
+                  <span class="dmi-label">User Information</span>
+                </div>
+                <span class="dmi-arrow">›</span>
+              </div>
+
+              <div class="drawer-menu-item" onclick="handleDrawerAction('Google Authenticator')">
+                <div class="dmi-left">
+                  <div class="dmi-icon">
+                    <svg viewBox="0 0 24 24"><path fill="#2563eb" d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/><text x="8.5" y="15.5" fill="#fff" font-size="10" font-weight="900">G</text></svg>
+                  </div>
+                  <span class="dmi-label">Google Authenticator</span>
+                </div>
+                <span class="dmi-arrow">›</span>
+              </div>
+
+              <div class="drawer-menu-item" onclick="handleDrawerAction('Official Telegram Channel')">
+                <div class="dmi-left">
+                  <div class="dmi-icon">
+                    <svg viewBox="0 0 24 24" fill="#0284c7"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                  </div>
+                  <span class="dmi-label">Telegram</span>
+                </div>
+                <span class="dmi-arrow">›</span>
+              </div>
+
+              <div class="drawer-menu-item" onclick="handleDrawerAction('24/7 Customer Help')">
+                <div class="dmi-left">
+                  <div class="dmi-icon">
+                    <svg viewBox="0 0 24 24" fill="#070312"><path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z"/></svg>
+                  </div>
+                  <span class="dmi-label">Customer Help</span>
+                </div>
+                <span class="dmi-arrow">›</span>
+              </div>
+
+              <div class="drawer-menu-item" onclick="handleDrawerAction('Email Support Service')">
+                <div class="dmi-left">
+                  <div class="dmi-icon">
+                    <svg viewBox="0 0 24 24" fill="#070312"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                  </div>
+                  <span class="dmi-label">Email Service</span>
+                </div>
+                <span class="dmi-arrow">›</span>
+              </div>
+
+              <div class="drawer-menu-item" onclick="handleDrawerAction('Frequently Asked Questions')">
+                <div class="dmi-left">
+                  <div class="dmi-icon">?</div>
+                  <span class="dmi-label">FAQ</span>
+                </div>
+                <span class="dmi-arrow">›</span>
+              </div>
+
+              <div class="drawer-menu-item logout-item" onclick="handleLogout()">
+                <div class="dmi-left">
+                  <div class="dmi-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-9c-1.1 0-2 .9-2 2v4h2V5h9v14h-9v-4H9v4c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                  </div>
+                  <span class="dmi-label">Logout</span>
+                </div>
+                <span class="dmi-arrow">›</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-trading-card">
+          <div class="dtc-top">
+            <div class="dtc-title-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="13" width="3" height="7" fill="#22c55e"/>
+                <rect x="8" y="10" width="3" height="10" fill="#22c55e"/>
+                <rect x="13" y="7" width="3" height="13" fill="#22c55e"/>
+                <path d="M3 11L11 6L15 8L21 3" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M17 3H21V7" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+              <span>Trading</span>
+            </div>
+            <div class="dtc-live-badge">
+              <span class="dtc-live-dot"></span>
+              <span>LIVE</span>
+            </div>
+          </div>
+
+          <div class="dtc-btns-row">
+            <button class="dtc-btn buy" onclick="window.location.href='trade.html'">↗ Buy</button>
+            <button class="dtc-btn sell" onclick="window.location.href='trade.html'">↘ Sell</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="mainAppViewport" class="app-viewport">
+    <header class="top-bar">
+      <div class="header-left-group">
+        <button class="menu-toggle-btn" onclick="toggleDrawer(true)" title="Open Menu" aria-label="Open Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="brand-mini">
+          <svg viewBox="0 0 40 34" fill="none">
+            <path d="M3 29L13 7L21 21L31 5" stroke="#d97706" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M24 5H33V14" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="brand-mini-text">
+            <span>NEXUS</span>
+            <span>TRADE</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-icons">
+        <button class="icon-btn" onclick="showToast('No new notifications', 'success')" title="Notifications">
+          <span class="notification-badge">1</span>
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        </button>
+        <button class="icon-btn" onclick="showToast('Rewards active', 'success')" title="Rewards">
+          <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard-scroll-area">
+      <div class="slogan-row">
+        Trade Smart... Grow Bigger... With <span>Nexus Trade...</span>
+      </div>
+
+      <div class="balance-card">
+        <div class="balance-left">
+          <div class="coin-logo">₮</div>
+          <div class="balance-info">
+            <span class="balance-label">TOTAL BALANCE</span>
+            <div class="balance-value" id="userBalance">$0.00 USDT</div>
+          </div>
+        </div>
+        <div class="level-box">
+          <div class="level-title" id="dashVipTitle">👑 LEVEL-1</div>
+          <div class="level-progress-bar">
+            <div class="level-progress-fill" id="dashLevelFill"></div>
+          </div>
+          <span class="level-percent" id="dashLevelPercent">15%</span>
+        </div>
+      </div>
+
+      <div class="stats-grid-6">
+        <div class="stat-card">
+          <div class="stat-title">Daily Profit</div>
+          <div class="stat-amount" id="statDailyProfit">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Referrals</div>
+          <div class="stat-amount" id="statReferrals">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Rewards</div>
+          <div class="stat-amount" id="statRewards">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Team %</div>
+          <div class="stat-amount" id="statTeamComm">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Salary Income</div>
+          <div class="stat-amount" id="statSalary">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Total Profit</div>
+          <div class="stat-amount" id="statTotalProfit">$0.00</div>
+        </div>
+      </div>
+
+      <div class="referral-card">
+        <div class="ref-header">🔗 Referral Link:</div>
+        <div class="ref-box-row">
+          <input type="text" id="refLinkInput" class="ref-input" value="https://abi3090-web.github.io/signup.html?ref=..." readonly />
+          <button class="copy-btn" onclick="copyRefLink()">Copy</button>
+        </div>
+        <div class="ref-footer">Share your referral link and earn rewards!</div>
+      </div>
+
+      <div class="team-summary-card">
+        <div class="team-top-row">
+          <div class="team-top-item">
+            <div class="t-label">Total Register Team</div>
+            <div class="t-val" id="totalRegTeam">0</div>
+          </div>
+          <div class="team-top-item">
+            <div class="t-label">Total Valid Team</div>
+            <div class="t-val" id="totalValidTeam">0</div>
+          </div>
+        </div>
+        <div class="team-sub-grid">
+          <div class="team-sub-row"><span>Total Direct A</span><span id="regDirectA">0</span></div>
+          <div class="team-sub-row"><span>Total Valid Direct A</span><span id="valDirectA">0</span></div>
+          <div class="team-sub-row"><span>Total Direct B</span><span id="regDirectB">0</span></div>
+          <div class="team-sub-row"><span>Total Valid Direct B</span><span id="valDirectB">0</span></div>
+          <div class="team-sub-row"><span>Total Direct C</span><span id="regDirectC">0</span></div>
+          <div class="team-sub-row"><span>Total Valid Direct C</span><span id="valDirectC">0</span></div>
+        </div>
+      </div>
+
+      <div class="team-history-card">
+        <div class="th-header">
+          <span>👥 Team History</span>
+          <div class="th-actions">
+            <button type="button" class="mini-alert-btn" onclick="showLastTeamAlert()">Alert Log</button>
+            <span style="color:#fbbf24; font-size:9.5px;">Live Feed</span>
+          </div>
+        </div>
+        <div class="th-table-container">
+          <table class="th-table">
+            <thead>
+              <tr>
+                <th>User Name</th>
+                <th>Team</th>
+                <th>Valid</th>
+                <th>Amount</th>
+                <th>Date &amp; Time</th>
+              </tr>
+            </thead>
+            <tbody id="teamHistoryTbody">
+              <tr>
+                <td colspan="5" style="padding:18px; color:#94a3b8;">Loading team records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item active">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="promotions.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Promotions</span>
+      </a>
+      <a href="trade.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span>Trade</span>
+      </a>
+      <a href="asset.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.89-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Asset</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://mzqduhqtdlvymeiouhxi.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_NtapCzhK706QFomb1adwjQ_luVqjlfu";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUserProfile = null;
+    let currentAuthUserId = null;
+    let lastTeamAlertText = "No team alert yet.";
+    let realtimeTeamChannel = null;
+
+    function showDebugAlert(title, message) {
+      lastTeamAlertText = message;
+      document.getElementById('tempAlertTitle').textContent = title || "🔔 Team Alert";
+      document.getElementById('tempAlertBody').textContent = message;
+      document.getElementById('tempAlertModal').classList.add('show');
+    }
+
+    function closeTempAlert() {
+      document.getElementById('tempAlertModal').classList.remove('show');
+    }
+
+    function showLastTeamAlert() {
+      showDebugAlert("🔔 Team Count & History Alert", lastTeamAlertText);
+    }
+
+    function toggleDrawer(show) {
+      const backdrop = document.getElementById('drawerBackdrop');
+      const mainApp = document.getElementById('mainAppViewport');
+      if (show) {
+        backdrop.classList.add('open');
+        mainApp.classList.add('blurred');
+      } else {
+        backdrop.classList.remove('open');
+        mainApp.classList.remove('blurred');
+      }
+    }
+
+    function closeDrawerOnOutside(event) {
+      if (event.target.id === 'drawerBackdrop' || event.target.classList.contains('drawer-frame')) {
+        toggleDrawer(false);
+      }
+    }
+
+    function openUserInformationCard() {
+      toggleDrawer(false);
+      toggleUserInfoModal(true);
+    }
+
+    function toggleUserInfoModal(show) {
+      const modal = document.getElementById('userInfoModal');
+      if (show) {
+        modal.classList.add('show');
+      } else {
+        modal.classList.remove('show');
+      }
+    }
+
+    function closeUserInfoModal(event) {
+      if (event.target.id === 'userInfoModal') {
+        toggleUserInfoModal(false);
+      }
+    }
+
+    function handleDrawerAction(label) {
+      toggleDrawer(false);
+      showToast(`Opening ${label}...`, 'success');
+    }
+
+    async function handleLogout() {
+      toggleDrawer(false);
+      showToast("Logging out...", "success");
+      try {
+        await supabaseClient.auth.signOut({ scope: "local" });
+      } catch (e) {}
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {}
+      setTimeout(() => {
+        window.location.replace("login.html");
+      }, 600);
+    }
+
+    function showToast(msg, type = 'success') {
+      const box = document.getElementById('toastBox');
+      box.textContent = msg;
+      box.className = `toast-banner show ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { box.classList.remove('show'); }, 2500);
+    }
+
+    function copyRefLink() {
+      const copyText = document.getElementById("refLinkInput");
+      if (!copyText.value || copyText.value.includes("...")) return;
+      navigator.clipboard.writeText(copyText.value);
+      showToast("Referral link copied successfully!", "success");
+    }
+
+    function copyUid() {
+      const uidText = document.getElementById("drawerUserUid").textContent;
+      if (!uidText || uidText === "------") return;
+      navigator.clipboard.writeText(uidText);
+      showToast("UID copied successfully!", "success");
+    }
+
+    function formatDateTime(isoString) {
+      if (!isoString) return "-";
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return isoString;
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    }
+
+    function fallbackUidFromId(userId) {
+      const str = String(userId || "000000");
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+      }
+      return String((Math.abs(hash) % 900000) + 100000);
+    }
+
+    function fallbackRefCodeFromId(userId, username = "") {
+      const cleanUser = String(username || "NT")
+        .replace(/[^A-Za-z0-9]/g, "")
+        .toUpperCase()
+        .slice(0, 4) || "NX";
+      const str = String(userId || "USER");
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+      }
+      const suffix = Math.abs(hash).toString(36).toUpperCase().padStart(4, "0").slice(0, 4);
+      return `NT${cleanUser}${suffix}`;
+    }
+
+    async function fetchDbProfile(user) {
+      let { data: profile, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Profile fetch error:", error);
+      }
+
+      const rawUid = profile?.uid && String(profile.uid).trim() && String(profile.uid).trim() !== "-"
+        ? String(profile.uid).trim()
+        : null;
+
+      const rawRef = (profile?.referral_code || profile?.ref_code) &&
+        String(profile.referral_code || profile.ref_code).trim() &&
+        String(profile.referral_code || profile.ref_code).trim() !== "-"
+        ? String(profile.referral_code || profile.ref_code).trim().toUpperCase()
+        : null;
+
+      const uname = profile?.username || profile?.full_name || user.user_metadata?.username || user.email.split('@')[0];
+      const finalUid = rawUid || fallbackUidFromId(user.id);
+      const finalRefCode = rawRef || fallbackRefCodeFromId(user.id, uname);
+
+      if (!rawUid || !rawRef) {
+        try {
+          const { data: updatedProfile } = await supabaseClient
+            .from('profiles')
+            .update({
+              uid: finalUid,
+              referral_code: finalRefCode
+            })
+            .eq('id', user.id)
+            .select('*')
+            .maybeSingle();
+
+          if (updatedProfile) {
+            profile = updatedProfile;
+          }
+        } catch (uErr) {
+          console.warn("Profile identity auto-save warning:", uErr);
+        }
+      }
+
+      return {
+        profile,
+        dbUid: (profile?.uid && String(profile.uid).trim()) || finalUid,
+        dbRefCode: ((profile?.referral_code || profile?.ref_code) && String(profile.referral_code || profile.ref_code).trim().toUpperCase()) || finalRefCode
+      };
+    }
+
+    async function loadAndRenderTeam(userId, triggerPopup = true) {
+      const { data: teamRows, error } = await supabaseClient
+        .from('team_history')
+        .select('*')
+        .eq('sponsor_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("team_history fetch error:", error);
+        document.getElementById('teamHistoryTbody').innerHTML =
+          `<tr><td colspan="5" style="padding:18px; color:#f87171;">Error loading team history: ${error.message}</td></tr>`;
+        if (triggerPopup) {
+          showDebugAlert("❌ Team History Query Error", error.message);
+        }
+        return [];
+      }
+
+      const rows = Array.isArray(teamRows) ? teamRows : [];
+
+      let regA = 0, valA = 0;
+      let regB = 0, valB = 0;
+      let regC = 0, valC = 0;
+
+      const tbody = document.getElementById('teamHistoryTbody');
+      tbody.innerHTML = '';
+
+      if (rows.length > 0) {
+        rows.forEach(row => {
+          const tier = String(row.tier || 'A').toUpperCase();
+          const depositAmt = parseFloat(row.member_deposit ?? row.deposit_amount ?? 0);
+          const isValidMember = (row.is_valid === true) || (depositAmt >= 20);
+
+          if (tier === 'A') {
+            regA++;
+            if (isValidMember) valA++;
+          } else if (tier === 'B') {
+            regB++;
+            if (isValidMember) valB++;
+          } else if (tier === 'C') {
+            regC++;
+            if (isValidMember) valC++;
+          }
+
+          const badgeClass = tier === 'A' ? 'team-badge-a' : (tier === 'B' ? 'team-badge-b' : 'team-badge-c');
+          const validHtml = isValidMember
+            ? `<td style="color:#34d399; font-weight:800;">Yes</td>`
+            : `<td style="color:#f87171; font-weight:700;">No</td>`;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.member_username || 'Member'}</td>
+            <td><span class="${badgeClass}">${tier}</span></td>
+            ${validHtml}
+            <td style="color:#34d399; font-weight:700;">$${depositAmt.toFixed(2)}</td>
+            <td>${formatDateTime(row.created_at)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:18px; color:#94a3b8;">No team members registered yet.</td></tr>`;
+      }
+
+      const totalReg = regA + regB + regC;
+      const totalVal = valA + valB + valC;
+
+      document.getElementById('totalRegTeam').textContent = totalReg;
+      document.getElementById('totalValidTeam').textContent = totalVal;
+      document.getElementById('regDirectA').textContent = regA;
+      document.getElementById('valDirectA').textContent = valA;
+      document.getElementById('regDirectB').textContent = regB;
+      document.getElementById('valDirectB').textContent = valB;
+      document.getElementById('regDirectC').textContent = regC;
+      document.getElementById('valDirectC').textContent = valC;
+
+      const historySummary = rows.length > 0
+        ? rows.map((r, idx) => `${idx + 1}. ${r.member_username || 'Member'} | Tier ${String(r.tier || 'A').toUpperCase()} | Valid: ${((r.is_valid === true) || parseFloat(r.member_deposit ?? 0) >= 20) ? 'Yes' : 'No'} | $${parseFloat(r.member_deposit ?? 0).toFixed(2)}`).join("\n")
+        : "No rows found in team_history for this sponsor.";
+
+      const alertText =
+        `Sponsor ID: ${userId}\n` +
+        `Total Register Team: ${totalReg} | Total Valid: ${totalVal}\n` +
+        `Direct A: ${regA} (Valid ${valA}) | B: ${regB} (Valid ${valB}) | C: ${regC} (Valid ${valC})\n` +
+        `Rows Count: ${rows.length}\n\n` +
+        `--- Team History ---\n${historySummary}`;
+
+      lastTeamAlertText = alertText;
+      if (triggerPopup) {
+        showDebugAlert("🔔 Team Count & History Loaded", alertText);
+      }
+
+      return rows;
+    }
+
+    function subscribeRealtimeTeam(userId) {
+      if (realtimeTeamChannel) {
+        try { supabaseClient.removeChannel(realtimeTeamChannel); } catch (e) {}
+      }
+      realtimeTeamChannel = supabaseClient
+        .channel(`team_history_${userId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'team_history', filter: `sponsor_id=eq.${userId}` },
+          () => {
+            loadAndRenderTeam(userId, true);
+          }
+        )
+        .subscribe();
+    }
+
+    async function loadUserData() {
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+
+      if (!session || sessionError) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      const user = session.user;
+      currentAuthUserId = user.id;
+
+      const { profile, dbUid, dbRefCode } = await fetchDbProfile(user);
+
+      const username = profile?.username || profile?.full_name || user.user_metadata?.username || user.email.split('@')[0];
+      const email = profile?.email || user.email;
+      const countryCode = profile?.country_code || profile?.country || user.user_metadata?.country_code || '+92';
+      const phoneNo = profile?.phone_no || profile?.phone || user.user_metadata?.phone_no || 'Not Provided';
+      const createdAt = profile?.created_at || user.created_at;
+
+      currentUserProfile = profile || {};
+
+      document.getElementById('userBalance').textContent = `$${parseFloat(profile?.balance ?? profile?.wallet_balance ?? 0).toFixed(2)} USDT`;
+      document.getElementById('statDailyProfit').textContent = `$${parseFloat(profile?.daily_profit || 0).toFixed(2)}`;
+      document.getElementById('statReferrals').textContent = `$${parseFloat(profile?.referral_income ?? profile?.bonus_income ?? 0).toFixed(2)}`;
+      document.getElementById('statRewards').textContent = `$${parseFloat(profile?.rewards_income || 0).toFixed(2)}`;
+      document.getElementById('statTeamComm').textContent = `$${parseFloat(profile?.team_commission || 0).toFixed(2)}`;
+      document.getElementById('statSalary').textContent = `$${parseFloat(profile?.salary_income || 0).toFixed(2)}`;
+      document.getElementById('statTotalProfit').textContent = `$${parseFloat(profile?.total_profit ?? profile?.total_income ?? 0).toFixed(2)}`;
+
+      const vipLvl = profile?.vip_level ?? profile?.level ?? 1;
+      const lvlProg = profile?.level_progress || 15;
+      document.getElementById('dashVipTitle').textContent = `👑 LEVEL-${vipLvl}`;
+      document.getElementById('drawerVipPill').textContent = `LEVEL-${vipLvl}`;
+      document.getElementById('dashLevelFill').style.width = `${lvlProg}%`;
+      document.getElementById('dashLevelPercent').textContent = `${lvlProg}%`;
+
+      document.getElementById('drawerUserName').textContent = username;
+      document.getElementById('drawerUserUid').textContent = dbUid;
+      document.getElementById('refLinkInput').value = `https://abi3090-web.github.io/signup.html?ref=${dbRefCode}`;
+
+      document.getElementById('infoUserName').textContent = username;
+      document.getElementById('infoUserUid').textContent = dbUid;
+      document.getElementById('infoUserEmail').textContent = email;
+      document.getElementById('infoCountryCode').textContent = countryCode;
+      document.getElementById('infoPhoneNo').textContent = phoneNo;
+      document.getElementById('infoRefCode').textContent = dbRefCode;
+      document.getElementById('infoCreatedAt').textContent = formatDateTime(createdAt);
+
+      await loadAndRenderTeam(user.id, true);
+      subscribeRealtimeTeam(user.id);
+    }
+
+    loadUserData();
+  </script>
+</body>
+</html>
