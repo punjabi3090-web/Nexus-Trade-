@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Asset | NEXUS TRADE</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #e5e7eb 50%, #f3f4f6 100%);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 10%, rgba(251, 191, 36, 0.25) 0%, rgba(255, 255, 255, 0.9) 60%),
+                  linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    }
+
+    .bg-scene svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(6px, 1vh, 12px) clamp(10px, 3.2vw, 16px);
+      gap: clamp(4px, 0.8vh, 8px);
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      height: clamp(38px, 5vh, 46px);
+    }
+
+    .brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-mini svg {
+      width: clamp(28px, 4vw, 34px);
+      height: clamp(24px, 3.5vw, 28px);
+    }
+
+    .brand-mini-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 0.95;
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(14px, 3.8vw, 18px);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-mini-text span:first-child { color: #070312; }
+    .brand-mini-text span:last-child { color: #d97706; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+
+    .top-icons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      background: #120a22;
+      border: 1.5px solid #f59e0b;
+      border-radius: 50%;
+      width: clamp(30px, 4.2vh, 36px);
+      height: clamp(30px, 4.2vh, 36px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+    }
+
+    .icon-btn svg {
+      width: clamp(14px, 2vh, 17px);
+      height: clamp(14px, 2vh, 17px);
+      fill: #fbbf24;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      min-width: 14px;
+      height: 14px;
+      padding: 0 3px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ffffff;
+    }
+
+    .notification-badge.hidden {
+      display: none;
+    }
+
+    .notif-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(7, 3, 18, 0.75);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .notif-modal-backdrop.open {
+      display: flex;
+    }
+
+    .notif-modal-card {
+      width: 100%;
+      max-width: 420px;
+      max-height: 86dvh;
+      background: linear-gradient(180deg, #140b26 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: #f8fafc;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .notif-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(251, 191, 36, 0.25);
+      padding-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .notif-modal-title {
+      font-size: 13px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+
+    .notif-close-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .notif-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 2px;
+    }
+
+    .notif-empty-state {
+      padding: 26px 12px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #cbd5e1;
+    }
+
+    .notif-item-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .notif-item-img {
+      width: 100%;
+      height: auto;
+      max-height: none;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      background: #070312;
+      display: block;
+    }
+
+    .notif-item-title {
+      font-size: 13px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+
+    .notif-item-msg {
+      font-size: 11.5px;
+      color: #e2e8f0;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .notif-item-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .notif-item-meta {
+      font-size: 9px;
+      color: #94a3b8;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .notif-brand-link {
+      color: #fbbf24;
+      font-weight: 800;
+    }
+
+    .notif-action-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .notif-action-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 6px 11px;
+      font-size: 10.5px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.12s ease, opacity 0.15s ease;
+    }
+
+    .notif-action-btn:active {
+      transform: scale(0.96);
+    }
+
+    .notif-save-btn {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      color: #070312;
+    }
+
+    .notif-copy-btn {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      color: #070312;
+    }
+
+    .asset-scroll-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-y: auto;
+      gap: clamp(5px, 0.9vh, 8px);
+      padding-right: 1px;
+      min-height: 0;
+    }
+
+    .asset-balance-card {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 12px;
+      padding: clamp(8px, 1.3vh, 12px) 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.25);
+      flex-shrink: 0;
+    }
+
+    .ab-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .coin-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 19px;
+      color: #070312;
+      border: 2px solid #fde047;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+
+    .ab-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+
+    .ab-value {
+      font-size: clamp(18px, 5vw, 22px);
+      font-weight: 900;
+      color: #34d399;
+      margin-top: 1px;
+    }
+
+    .ab-level-box {
+      background: #070312;
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      border-radius: 10px;
+      padding: 5px 10px;
+      text-align: center;
+    }
+
+    .ab-level-box.plan-active {
+      border-color: #34d399;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.28);
+    }
+
+    .ab-level-title {
+      font-size: 10px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+
+    .ab-level-sub {
+      font-size: 8px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    .action-buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-action {
+      border: none;
+      border-radius: 10px;
+      padding: clamp(9px, 1.3vh, 12px) 8px;
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(11.5px, 3vw, 13.5px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-deposit {
+      background: linear-gradient(90deg, #059669, #34d399);
+      color: #070312;
+    }
+
+    .btn-withdraw {
+      background: linear-gradient(90deg, #b45309, #f59e0b);
+      color: #ffffff;
+    }
+
+    .section-header-title {
+      font-size: clamp(10.5px, 2.8vw, 12px);
+      font-weight: 900;
+      font-style: italic;
+      color: #070312;
+      border-bottom: 2px solid #f59e0b;
+      padding-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .history-card {
+      background: linear-gradient(135deg, #160c2c 0%, #0a0414 100%);
+      border: 1.2px solid #fbbf24;
+      border-radius: 12px;
+      padding: 8px 10px;
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(251, 191, 36, 0.2);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 120px;
+    }
+
+    .history-table-container {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 200px;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9px;
+      text-align: center;
+    }
+
+    .history-table th {
+      color: #94a3b8;
+      font-weight: 700;
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      background: #160c2c;
+      z-index: 2;
+    }
+
+    .history-table td {
+      padding: 6px 2px;
+      color: #cbd5e1;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .status-badge {
+      padding: 2px 6px;
+      border-radius: 99px;
+      font-size: 8px;
+      font-weight: 800;
+    }
+
+    .status-pending { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid #eab308; }
+    .status-approved { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .status-rejected { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 3, 18, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 100;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 380px;
+      background: linear-gradient(180deg, #160c2c 0%, #070312 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 16px;
+      padding: 16px;
+      color: #ffffff;
+      box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 900;
+      font-style: italic;
+      color: #fbbf24;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .address-box {
+      background: #070312;
+      border: 1px dashed #fbbf24;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 4px 0;
+    }
+
+    .address-text {
+      font-size: 10px;
+      font-weight: 700;
+      color: #34d399;
+      word-break: break-all;
+    }
+
+    .copy-mini-btn {
+      background: #fbbf24;
+      color: #070312;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-size: 9px;
+      font-weight: 900;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+    }
+
+    .input-group input, .input-group select {
+      width: 100%;
+      background: #070312;
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .btn-submit-modal {
+      width: 100%;
+      background: linear-gradient(90deg, #b45309, #f59e0b);
+      color: #ffffff;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: linear-gradient(135deg, #120a22 0%, #070312 100%);
+      border: 1.5px solid #fbbf24;
+      border-radius: 14px;
+      padding: clamp(5px, 0.8vh, 8px) 4px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      color: #cbd5e1;
+      font-size: clamp(9.5px, 2.5vw, 11px);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .nav-item.active, .nav-item:hover {
+      color: #fbbf24;
+    }
+
+    .nav-item svg {
+      width: clamp(16px, 2.3vh, 19px);
+      height: clamp(16px, 2.3vh, 19px);
+      fill: currentColor;
+    }
+
+    .toast-banner {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120%);
+      z-index: 999;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      max-width: 92%;
+      text-align: center;
+      transition: transform 0.3s ease;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    .toast-banner.show { transform: translateX(-50%) translateY(0); }
+    .toast-success { background: #132e24; border: 1px solid #10b981; color: #a7f3d0; }
+    .toast-error { background: #3b1219; border: 1px solid #ef4444; color: #fecaca; }
+  </style>
+</head>
+<body>
+
+  <div id="toastBox" class="toast-banner"></div>
+
+  <div id="notifModal" class="notif-modal-backdrop" onclick="if(event.target.id==='notifModal') closeNotifModal()">
+    <div class="notif-modal-card" onclick="event.stopPropagation()">
+      <div class="notif-modal-header">
+        <span class="notif-modal-title">Notifications</span>
+        <button type="button" class="notif-close-btn" onclick="closeNotifModal()">✕ Close</button>
+      </div>
+      <div id="notifModalList" class="notif-list">
+        <div class="notif-empty-state">No Notification yet</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-scene">
+    <svg viewBox="0 0 440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#b45309" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#d97706" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="goldWaveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M -20 0 Q 110 80, 230 40 T 460 20 L 460 150 L -20 150 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880 L 460 920 L -20 920 Z" fill="url(#goldWaveFill)"/>
+      <path d="M -20 880 Q 110 820, 230 860 T 460 880" fill="none" stroke="url(#goldWaveGrad)" stroke-width="3"/>
+    </svg>
+  </div>
+
+  <div class="app-viewport">
+    
+    <header class="top-bar">
+      <div class="brand-mini">
+        <svg viewBox="0 0 40 34" fill="none">
+          <path d="M3 29L13 7L21 21L31 5" stroke="#d97706" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 5H33V14" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="brand-mini-text">
+          <span>NEXUS</span>
+          <span>TRADE</span>
+        </div>
+      </div>
+
+      <div class="top-icons">
+        <button type="button" class="icon-btn" onclick="openNotifModal()" title="Notifications" aria-label="Notifications">
+          <span id="notifBadge" class="notification-badge hidden">0</span>
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        </button>
+        <button type="button" class="icon-btn" onclick="showToast('Rewards active', 'success')" title="Rewards">
+          <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="asset-scroll-area">
+
+      <div class="asset-balance-card">
+        <div class="ab-left">
+          <div class="coin-logo">₮</div>
+          <div>
+            <div class="ab-label">Total Balance</div>
+            <div class="ab-value" id="assetTotalBal">$0.00 USDT</div>
+          </div>
+        </div>
+        <div class="ab-level-box" id="assetLevelBox">
+          <div class="ab-level-title" id="assetVipLvl">👑 LEVEL-1</div>
+          <div class="ab-level-sub" id="assetVipSub">0% • Locked</div>
+        </div>
+      </div>
+
+      <div class="action-buttons-grid">
+        <button type="button" class="btn-action btn-deposit" onclick="openDepositModal()">+ Deposit</button>
+        <button type="button" class="btn-action btn-withdraw" onclick="openWithdrawModal()">- Withdraw</button>
+      </div>
+
+      <div class="section-header-title">
+        <span>📥 Deposit History</span>
+      </div>
+      <div class="history-card">
+        <div class="history-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Network</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="depositHistoryTbody">
+              <tr><td colspan="4" style="padding:12px; color:#94a3b8;">Loading deposits...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-header-title">
+        <span>📤 Withdraw History</span>
+      </div>
+      <div class="history-card">
+        <div class="history-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Wallet</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="withdrawHistoryTbody">
+              <tr><td colspan="4" style="padding:12px; color:#94a3b8;">Loading withdrawals...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="promotions.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Promotions</span>
+      </a>
+      <a href="trade.html" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+        <span>Trade</span>
+      </a>
+      <a href="asset.html" class="nav-item active">
+        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.89-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Asset</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- Deposit Modal -->
+  <div class="modal-overlay" id="depositModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">📥 Deposit USDT (BEP20)</span>
+        <button type="button" class="close-btn" onclick="closeModal('depositModal')">✕</button>
+      </div>
+      
+      <div class="input-group">
+        <label>Select Network</label>
+        <select id="depNetwork">
+          <option value="USDT (BEP20)">USDT (BEP20)</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Official Deposit Address (BEP20)</label>
+        <div class="address-box">
+          <span class="address-text" id="depAddressText">0xa9e4D4c86137B5C29B63783b2c683dD14536f389</span>
+          <button type="button" class="copy-mini-btn" onclick="copyDepositAddress()">Copy</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Deposit Amount (Min $20 USDT)</label>
+        <input type="number" id="depAmount" placeholder="e.g. 50" min="20" step="any" />
+      </div>
+
+      <div class="input-group">
+        <label>Transaction Hash (TxID)</label>
+        <input type="text" id="depTxHash" placeholder="Enter TxHash after sending payment" />
+      </div>
+
+      <button type="button" class="btn-submit-modal" id="submitDepBtn" onclick="submitDeposit()">Submit Deposit Request</button>
+    </div>
+  </div>
+
+  <!-- Withdraw Modal -->
+  <div class="modal-overlay" id="withdrawModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">📤 Withdraw USDT (BEP20)</span>
+        <button type="button" class="close-btn" onclick="closeModal('withdrawModal')">✕</button>
+      </div>
+
+      <div class="input-group">
+        <label>Select Network</label>
+        <select id="withNetwork">
+          <option value="USDT (BEP20)">USDT (BEP20)</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Withdrawal Amount (Min $10 USDT)</label>
+        <input type="number" id="withAmount" placeholder="e.g. 25" min="10" step="any" />
+      </div>
+
+      <div class="input-group">
+        <label>Your USDT Wallet Address (BEP20)</label>
+        <input type="text" id="withAddress" placeholder="0x..." />
+      </div>
+
+      <button type="button" class="btn-submit-modal" id="submitWithBtn" onclick="submitWithdraw()">Submit Withdrawal Request</button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://mzqduhqtdlvymeiouhxi.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_NtapCzhK706QFomb1adwjQ_luVqjlfu";
+    const SEEN_NOTIF_KEY = "nexus_seen_announcement_ids";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUserId = null;
+    let currentBalance = 0;
+    let currentAnnouncements = [];
+    let notifChannel = null;
+    let assetRealtimeChannel = null;
+    let dbVipPlans = [
+      { level: 1, min_balance: 20 },
+      { level: 2, min_balance: 200 },
+      { level: 3, min_balance: 300 },
+      { level: 4, min_balance: 500 },
+      { level: 5, min_balance: 1000 },
+      { level: 6, min_balance: 2000 }
+    ];
+
+    function showToast(msg, type = 'success') {
+      const box = document.getElementById('toastBox');
+      box.textContent = msg;
+      box.className = `toast-banner show ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { box.classList.remove('show'); }, 2800);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatAnnouncedUtcDateTime(rawCreatedAt) {
+      const d = rawCreatedAt ? new Date(rawCreatedAt) : new Date();
+      const target = Number.isNaN(d.getTime()) ? new Date() : d;
+      const pad2 = (n) => String(n).padStart(2, '0');
+      const year = target.getUTCFullYear();
+      const month = pad2(target.getUTCMonth() + 1);
+      const day = pad2(target.getUTCDate());
+      const hours = pad2(target.getUTCHours());
+      const minutes = pad2(target.getUTCMinutes());
+      const seconds = pad2(target.getUTCSeconds());
+      return `${year}-${month}-${day} UTC ${hours}:${minutes}:${seconds}`;
+    }
+
+    function readSeenIds() {
+      try {
+        const raw = localStorage.getItem(SEEN_NOTIF_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr.map(String) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeSeenIds(ids) {
+      try {
+        localStorage.setItem(SEEN_NOTIF_KEY, JSON.stringify(Array.from(new Set(ids.map(String))).slice(0, 100)));
+      } catch (e) {}
+    }
+
+    function updateNotifBadge() {
+      const badge = document.getElementById('notifBadge');
+      if (!badge) return;
+      const seen = readSeenIds();
+      const unreadCount = currentAnnouncements.filter(n => n && n.id != null && !seen.includes(String(n.id))).length;
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+        badge.classList.remove('hidden');
+      } else {
+        badge.textContent = '0';
+        badge.classList.add('hidden');
+      }
+    }
+
+    function buildFullPostText(item) {
+      const parts = [];
+      if (item?.title) parts.push(String(item.title).trim());
+      if (item?.message) parts.push(String(item.message).trim());
+      if (item?.image_url && !String(item.image_url).startsWith('data:')) {
+        parts.push(String(item.image_url).trim());
+      }
+      parts.push(`www.NexusTradeLive\n${formatAnnouncedUtcDateTime(item?.created_at)}`);
+      return parts.join('\n\n');
+    }
+
+    async function copyAnnouncementPost(index) {
+      const item = currentAnnouncements[index];
+      if (!item) return;
+      const textToCopy = buildFullPostText(item);
+      if (!textToCopy) {
+        showToast("Nothing to copy", "error");
+        return;
+      }
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(textToCopy);
+          showToast("Post copied!", "success");
+          return;
+        }
+      } catch (e) {}
+
+      const tempArea = document.createElement('textarea');
+      tempArea.value = textToCopy;
+      tempArea.style.position = 'fixed';
+      tempArea.style.opacity = '0';
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand('copy');
+        showToast("Post copied!", "success");
+      } catch (err) {
+        showToast("Copy failed", "error");
+      } finally {
+        document.body.removeChild(tempArea);
+      }
+    }
+
+    function triggerDownloadHref(href, filename) {
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function saveAnnouncementPicture(index) {
+      const item = currentAnnouncements[index];
+      const imgUrl = String(item?.image_url || '').trim();
+      if (!imgUrl) {
+        showToast("No picture in this post", "error");
+        return;
+      }
+
+      const safeTitle = String(item?.title || 'nexus-trade-post')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'nexus-trade-post';
+
+      try {
+        if (imgUrl.startsWith('data:image/')) {
+          const extMatch = imgUrl.match(/^data:image\/([a-zA-Z0-9+]+);/);
+          const ext = (extMatch && extMatch[1]) ? extMatch[1].replace('jpeg', 'jpg') : 'jpg';
+          triggerDownloadHref(imgUrl, `${safeTitle}.${ext}`);
+          showToast("Picture saved!", "success");
+          return;
+        }
+
+        const resp = await fetch(imgUrl, { mode: 'cors' });
+        if (!resp.ok) throw new Error('Fetch failed');
+        const blob = await resp.blob();
+        const ext = (blob.type && blob.type.split('/')[1]) ? blob.type.split('/')[1].replace('jpeg', 'jpg') : 'jpg';
+        const blobUrl = URL.createObjectURL(blob);
+        triggerDownloadHref(blobUrl, `${safeTitle}.${ext}`);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+        showToast("Picture saved!", "success");
+      } catch (err) {
+        const link = document.createElement('a');
+        link.href = imgUrl;
+        link.download = `${safeTitle}.jpg`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Opened picture to save", "success");
+      }
+    }
+
+    function renderAnnouncementsModal() {
+      const container = document.getElementById('notifModalList');
+      if (!container) return;
+
+      if (!currentAnnouncements.length) {
+        container.innerHTML = `<div class="notif-empty-state">No Notification yet</div>`;
+        return;
+      }
+
+      container.innerHTML = currentAnnouncements.map((item, idx) => {
+        const imgUrl = String(item.image_url || '').trim();
+        const imgHtml = imgUrl
+          ? `<img src="${escapeHtml(imgUrl)}" alt="Notification Picture" class="notif-item-img" onerror="this.style.display='none'" />`
+          : '';
+        const saveBtnHtml = imgUrl
+          ? `<button type="button" class="notif-action-btn notif-save-btn" onclick="saveAnnouncementPicture(${idx})">Save</button>`
+          : '';
+        const announcedUtc = formatAnnouncedUtcDateTime(item.created_at);
+        return `
+          <article class="notif-item-card">
+            ${imgHtml}
+            <div class="notif-item-title">${escapeHtml(item.title || 'Announcement')}</div>
+            <div class="notif-item-msg">${escapeHtml(item.message || '')}</div>
+            <div class="notif-item-footer">
+              <div class="notif-item-meta">
+                <span class="notif-brand-link">www.NexusTradeLive</span>
+                <span>${escapeHtml(announcedUtc)}</span>
+              </div>
+              <div class="notif-action-btns">
+                ${saveBtnHtml}
+                <button type="button" class="notif-action-btn notif-copy-btn" onclick="copyAnnouncementPost(${idx})">Copy</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function openNotifModal() {
+      renderAnnouncementsModal();
+      const modal = document.getElementById('notifModal');
+      if (modal) modal.classList.add('open');
+
+      const seen = readSeenIds();
+      currentAnnouncements.forEach(n => {
+        if (n && n.id != null) seen.push(String(n.id));
+      });
+      writeSeenIds(seen);
+      updateNotifBadge();
+    }
+
+    function closeNotifModal() {
+      const modal = document.getElementById('notifModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    async function loadAnnouncements() {
+      const { data, error } = await supabaseClient
+        .from('broadcast_notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (!error && Array.isArray(data)) {
+        currentAnnouncements = data;
+        updateNotifBadge();
+        if (document.getElementById('notifModal')?.classList.contains('open')) {
+          renderAnnouncementsModal();
+        }
+      } else {
+        currentAnnouncements = [];
+        updateNotifBadge();
+        if (document.getElementById('notifModal')?.classList.contains('open')) {
+          renderAnnouncementsModal();
+        }
+      }
+    }
+
+    function subscribeRealtimeAnnouncements() {
+      if (notifChannel) return;
+      notifChannel = supabaseClient
+        .channel('public:broadcast_notifications:asset')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'broadcast_notifications' },
+          async (payload) => {
+            await loadAnnouncements();
+            const newTitle = payload?.new?.title || 'New Notification';
+            showToast(`📢 ${newTitle}`, 'success');
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'broadcast_notifications' },
+          async () => {
+            await loadAnnouncements();
+          }
+        )
+        .subscribe();
+    }
+
+    function openDepositModal() {
+      document.getElementById('depositModal').classList.add('show');
+    }
+
+    function openWithdrawModal() {
+      document.getElementById('withdrawModal').classList.add('show');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+
+    function copyDepositAddress() {
+      const addr = document.getElementById('depAddressText').textContent;
+      navigator.clipboard.writeText(addr);
+      showToast("Deposit address copied!", "success");
+    }
+
+    function formatShortDate(iso) {
+      if (!iso) return "-";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function getStatusBadge(status) {
+      const s = (status || 'pending').toLowerCase();
+      if (s === 'approved' || s === 'completed') return `<span class="status-badge status-approved">${escapeHtml(s)}</span>`;
+      if (s === 'rejected') return `<span class="status-badge status-rejected">${escapeHtml(s)}</span>`;
+      return `<span class="status-badge status-pending">${escapeHtml(s)}</span>`;
+    }
+
+    function updateAssetLevelBadge(bal) {
+      const sorted = [...dbVipPlans].sort((a, b) => Number(a.level) - Number(b.level));
+      let activePlan = null;
+      for (const p of sorted) {
+        if (bal >= Number(p.min_balance || 20)) activePlan = p;
+      }
+      const boxEl = document.getElementById('assetLevelBox');
+      const titleEl = document.getElementById('assetVipLvl');
+      const subEl = document.getElementById('assetVipSub');
+
+      if (activePlan) {
+        if (boxEl) boxEl.classList.add('plan-active');
+        if (titleEl) titleEl.textContent = `👑 LEVEL-${activePlan.level}`;
+        if (subEl) subEl.textContent = '100% • Active';
+      } else {
+        const firstMin = Number(sorted[0]?.min_balance || 20);
+        const pct = Math.min(100, Math.max(0, Math.round((bal / firstMin) * 100)));
+        if (boxEl) boxEl.classList.remove('plan-active');
+        if (titleEl) titleEl.textContent = '👑 LEVEL-1';
+        if (subEl) subEl.textContent = `${pct}% • Locked`;
+      }
+    }
+
+    async function loadAssetData() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      currentUserId = session.user.id;
+
+      const { data: vipRows } = await supabaseClient
+        .from('vip_levels')
+        .select('level, min_balance')
+        .eq('is_active', true)
+        .order('level', { ascending: true });
+
+      if (Array.isArray(vipRows) && vipRows.length > 0) {
+        dbVipPlans = vipRows;
+      }
+
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('balance')
+        .eq('id', currentUserId)
+        .maybeSingle();
+
+      currentBalance = parseFloat(profile?.balance || 0);
+      document.getElementById('assetTotalBal').textContent = `$${currentBalance.toFixed(2)} USDT`;
+      updateAssetLevelBadge(currentBalance);
+
+      const { data: deposits } = await supabaseClient
+        .from('deposits')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false });
+
+      const depTbody = document.getElementById('depositHistoryTbody');
+      depTbody.innerHTML = '';
+      if (deposits && deposits.length > 0) {
+        deposits.forEach(d => {
+          depTbody.innerHTML += `
+            <tr>
+              <td>${escapeHtml(formatShortDate(d.created_at))}</td>
+              <td style="color:#34d399; font-weight:800;">$${parseFloat(d.amount || 0).toFixed(2)}</td>
+              <td>${escapeHtml(d.network || 'BEP20')}</td>
+              <td>${getStatusBadge(d.status)}</td>
+            </tr>
+          `;
+        });
+      } else {
+        depTbody.innerHTML = `<tr><td colspan="4" style="padding:12px; color:#94a3b8;">No deposits yet</td></tr>`;
+      }
+
+      const { data: withdrawals } = await supabaseClient
+        .from('withdrawals')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false });
+
+      const withTbody = document.getElementById('withdrawHistoryTbody');
+      withTbody.innerHTML = '';
+      if (withdrawals && withdrawals.length > 0) {
+        withdrawals.forEach(w => {
+          const shortAddr = w.wallet_address ? `${w.wallet_address.slice(0, 6)}...${w.wallet_address.slice(-4)}` : '-';
+          withTbody.innerHTML += `
+            <tr>
+              <td>${escapeHtml(formatShortDate(w.created_at))}</td>
+              <td style="color:#fbbf24; font-weight:800;">$${parseFloat(w.amount || 0).toFixed(2)}</td>
+              <td>${escapeHtml(shortAddr)}</td>
+              <td>${getStatusBadge(w.status)}</td>
+            </tr>
+          `;
+        });
+      } else {
+        withTbody.innerHTML = `<tr><td colspan="4" style="padding:12px; color:#94a3b8;">No withdrawals yet</td></tr>`;
+      }
+
+      if (!assetRealtimeChannel && currentUserId) {
+        assetRealtimeChannel = supabaseClient
+          .channel(`asset_live_${currentUserId}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${currentUserId}` },
+            () => loadAssetData()
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'deposits', filter: `user_id=eq.${currentUserId}` },
+            () => loadAssetData()
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'withdrawals', filter: `user_id=eq.${currentUserId}` },
+            () => loadAssetData()
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'vip_levels' },
+            () => loadAssetData()
+          )
+          .subscribe();
+      }
+
+      await loadAnnouncements();
+      subscribeRealtimeAnnouncements();
+    }
+
+    async function submitDeposit() {
+      const amount = parseFloat(document.getElementById('depAmount').value);
+      const txHash = document.getElementById('depTxHash').value.trim();
+      const network = document.getElementById('depNetwork').value;
+      const btn = document.getElementById('submitDepBtn');
+
+      if (!amount || amount < 20) {
+        showToast("Minimum deposit is $20 USDT", "error");
+        return;
+      }
+      if (!txHash) {
+        showToast("Please enter Transaction Hash (TxID)", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Submitting...";
+
+      const { error } = await supabaseClient
+        .from('deposits')
+        .insert([
+          {
+            user_id: currentUserId,
+            amount: amount,
+            network: network,
+            tx_hash: txHash,
+            status: 'pending'
+          }
+        ]);
+
+      btn.disabled = false;
+      btn.textContent = "Submit Deposit Request";
+
+      if (error) {
+        showToast(error.message, "error");
+      } else {
+        showToast("Deposit request submitted for approval!", "success");
+        closeModal('depositModal');
+        document.getElementById('depAmount').value = '';
+        document.getElementById('depTxHash').value = '';
+        loadAssetData();
+      }
+    }
+
+    async function submitWithdraw() {
+      const amount = parseFloat(document.getElementById('withAmount').value);
+      const address = document.getElementById('withAddress').value.trim();
+      const network = document.getElementById('withNetwork').value;
+      const btn = document.getElementById('submitWithBtn');
+
+      if (!amount || amount < 10) {
+        showToast("Minimum withdrawal is $10 USDT", "error");
+        return;
+      }
+      if (amount > currentBalance) {
+        showToast("Insufficient wallet balance!", "error");
+        return;
+      }
+      if (!address) {
+        showToast("Please enter your USDT wallet address", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Processing...";
+
+      const { error } = await supabaseClient
+        .from('withdrawals')
+        .insert([
+          {
+            user_id: currentUserId,
+            amount: amount,
+            network: network,
+            wallet_address: address,
+            status: 'pending'
+          }
+        ]);
+
+      btn.disabled = false;
+      btn.textContent = "Submit Withdrawal Request";
+
+      if (error) {
+        showToast(error.message, "error");
+      } else {
+        showToast("Withdrawal request submitted!", "success");
+        closeModal('withdrawModal');
+        document.getElementById('withAmount').value = '';
+        document.getElementById('withAddress').value = '';
+        loadAssetData();
+      }
+    }
+
+    loadAssetData();
+  </script>
+
+</body>
+</html>
